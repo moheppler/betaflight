@@ -55,6 +55,10 @@
 
 #include "rx/rx.h"
 
+// TODO remove if unused
+#include "build/debug.h"
+
+
 PG_REGISTER_WITH_RESET_FN(servoConfig_t, servoConfig, PG_SERVO_CONFIG, 0);
 
 void pgResetFn_servoConfig(servoConfig_t *servoConfig)
@@ -341,9 +345,14 @@ static FAST_CODE void rocketmixer(void)
     float des_My = pidData[FD_PITCH].Sum;
     float des_Mz = pidData[FD_YAW].Sum;
     float des_Tx = 10; // need to figure out how to get this
+
     
     // calculate desired thrust vector
     float des_thrust_vector[3] = {des_Tx, -des_Mz / r_g, des_My / r_g};
+
+    debug[0] = des_thrust_vector[0];
+    debug[1] = des_thrust_vector[1];
+    debug[2] = des_thrust_vector[2];
 
     // find normalized thrust vector and extract y- and z-components
     float norm = sqrtf(des_thrust_vector[0] * des_thrust_vector[0] +
@@ -353,32 +362,48 @@ static FAST_CODE void rocketmixer(void)
     float normed_y = norm_thrust_vector[1];
     float normed_z = norm_thrust_vector[2];
 
+    debug[3] = norm;
+    debug[4] = norm_thrust_vector[0];
+    debug[5] = norm_thrust_vector[1];
+    debug[6] = norm_thrust_vector[2];
+
+
     // calculate desired servo angles
     float arg_2 = ((k_1 * normed_y) - (k_2 * normed_z)) / (k_1 * k_1 + k_2 * k_2);
     float phi_2 = asin(arg_2);
 
     float arg_1 = -((k_1 * normed_z) + (k_2 * normed_y)) / ((k_1 * k_1 + k_2 * k_2) * (float)cos(phi_2));
     float phi_1 = asin(arg_1);
+    // debug[5] = arg_2;
+    // debug[6] = phi_2;
 
     // pass angles to servos & motors (TODO might need to do some conversion here?)
     float pwm_1 = 920 + 1200 *((phi_1 + 1.5708)/3.1416); // convert to pwm
-    float pwm_2 =
-    servo[0] = pwm_1;
-    servo[1] = pwm_2;
+    float pwm_2 = 920 + 1200 *((phi_2 + 1.5708)/3.1416);
+
+    servo[0] = 0;
+    servo[1] = 0;
+    servo[2] = 0;
+    servo[3] = 0;
+    servo[4] = 0;
+    servo[5] = pwm_1;
+    servo[6] = pwm_2;
+    servo[7] = 0;
     motor[0] = des_Tx;
     motor[1] = des_Mx;
-    for (int i =2; i < MAX_SUPPORTED_SERVOS; ++i) {
-        servo[i] = 0;
-    }
+
 
 }
 
 void writeServos(void)
 {
     // TODO get rid of servoTable() if things work with rocketmixer()
+    
     servoTable(); 
     rocketmixer();
     filterServos();
+
+
 
     uint8_t servoIndex = 0;
     switch (getMixerMode()) {
