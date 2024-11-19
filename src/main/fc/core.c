@@ -108,7 +108,7 @@
 
 #include "core.h"
 
-#define ICSROCKET 1 // using rocket mixer
+#undef ICSROCKET // using rocket mixer
 
 
 enum {
@@ -1241,8 +1241,10 @@ void subTaskTelemetryPollSensors(timeUs_t currentTimeUs)
 }
 #endif
 
-static void DoNothing(void) {}
 
+#ifdef ICSROCKET
+
+static void DoNothing(void) {}
 
 static FAST_CODE void rocketmixer(timeUs_t currentTimeUs) 
 {
@@ -1292,6 +1294,7 @@ static FAST_CODE void rocketmixer(timeUs_t currentTimeUs)
     }
 
 }
+#endif
 
 static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
 {
@@ -1307,6 +1310,7 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
         startTime = micros();
     }
 
+    // TODO don't need this for now with the modification in servos.c
     // ROCKET MODIFICATION
     #ifdef ICSROCKET
         rocketmixer(currentTimeUs);
