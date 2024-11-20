@@ -350,9 +350,9 @@ static void rocketmixer(void)
     // calculate desired thrust vector
     float des_thrust_vector[3] = {des_Tx, -des_Mz / r_g, des_My / r_g};
 
-    debug[0] = des_thrust_vector[0] * 1000;
-    debug[1] = des_thrust_vector[1] * 1000;
-    debug[2] = des_thrust_vector[2] * 1000;
+    // debug[0] = des_thrust_vector[0] * 10;
+    // debug[1] = des_thrust_vector[1] * 10;
+    // debug[2] = des_thrust_vector[2] * 10;
 
     // find normalized thrust vector and extract y- and z-components
     float norm = sqrtf(des_thrust_vector[0] * des_thrust_vector[0] +
@@ -364,12 +364,15 @@ static void rocketmixer(void)
     float normed_z = des_thrust_vector[2] / norm;
 
     // calculate desired servo angles
-    float arg_2 = ((k_1 * normed_y) - (k_2 * normed_z)) / (k_1 * k_1 + k_2 * k_2);
+    float arg_2 = (-(k_1 * normed_y) + (k_2 * normed_z)) / (k_1 * k_1 + k_2 * k_2);
     float phi_2 = asin(arg_2);
 
 
     float arg_1 = -((k_1 * normed_z) + (k_2 * normed_y)) / ((k_1 * k_1 + k_2 * k_2) * (float)cos(phi_2));
     float phi_1 = asin(arg_1);
+
+    // debug[3] = phi_1 * 1000;
+    // debug[4] = phi_2 * 1000;
 
 
     // pass angles to servos & motors (TODO might need to do some conversion here?)

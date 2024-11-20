@@ -1,0 +1,73 @@
+defaults nosave
+
+
+# version
+# Betaflight / STM32F7X2 (S7X2) 4.6.0 Nov 20 2024 / 15:33:14 (norevision) MSP API: 1.47
+# config rev: 05342a8
+
+# start the command batch
+batch start
+
+# reset configuration to default settings
+defaults nosave
+
+board_name MAFLY
+manufacturer_id CUST
+mcu_id 0043004a3532510631323631
+signature 
+
+# feature
+feature LED_STRIP
+feature OSD
+
+# mixer
+mixer AIRPLANE
+
+# aux
+aux 0 0 0 1300 1700 0 0
+
+# master
+set align_board_pitch = 180
+set small_angle = 180
+
+profile 0
+
+# profile 0
+set p_pitch = 164
+set i_pitch = 250
+set d_pitch = 41
+set f_pitch = 218
+set p_roll = 157
+set i_roll = 250
+set d_roll = 36
+set f_roll = 210
+set p_yaw = 157
+set i_yaw = 250
+set f_yaw = 210
+set d_max_roll = 49
+set d_max_pitch = 56
+set simplified_master_multiplier = 175
+set simplified_d_gain = 70
+set simplified_pi_gain = 200
+
+profile 1
+
+profile 2
+
+profile 3
+
+# restore original profile selection
+profile 0
+
+rateprofile 0
+
+rateprofile 1
+
+rateprofile 2
+
+rateprofile 3
+
+# restore original rateprofile selection
+rateprofile 0
+
+# save configuration
