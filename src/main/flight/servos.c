@@ -331,51 +331,46 @@ static void updateGimbalServos(uint8_t firstServoIndex)
 static void servoTable(void);
 static void filterServos(void);
 
-static FAST_CODE void rocketmixer(void) 
+static void rocketmixer(void) 
 {
     
     float r_g = 0.6744; // distance from CoM to center of thrust [m] 
     
     // inverse kinematics constants
-    float k_1 = 8870359658994711/9007199254740992;
-    float k_2 = 6256334945874825/36028797018963968;
+    float k_1 = 0.98480775301;
+    float k_2 = 0.17364817766;
     
     // get command torques & thrust
-    float des_Mx = pidData[FD_ROLL].Sum; // check axes
+    // float des_Mx = pidData[FD_ROLL].Sum; // check axes
     float des_My = pidData[FD_PITCH].Sum;
     float des_Mz = pidData[FD_YAW].Sum;
-    float des_Tx = 10; // need to figure out how to get this
+    float des_Tx = 500; // need to figure out how to get this
 
     
     // calculate desired thrust vector
     float des_thrust_vector[3] = {des_Tx, -des_Mz / r_g, des_My / r_g};
 
-    debug[0] = des_thrust_vector[0];
-    debug[1] = des_thrust_vector[1];
-    debug[2] = des_thrust_vector[2];
+    debug[0] = des_thrust_vector[0] * 1000;
+    debug[1] = des_thrust_vector[1] * 1000;
+    debug[2] = des_thrust_vector[2] * 1000;
 
     // find normalized thrust vector and extract y- and z-components
     float norm = sqrtf(des_thrust_vector[0] * des_thrust_vector[0] +
                        des_thrust_vector[1] * des_thrust_vector[1] +
                        des_thrust_vector[2] * des_thrust_vector[2]);
-    float norm_thrust_vector[3] = {des_thrust_vector[0] / norm, des_thrust_vector[1] / norm, des_thrust_vector[2] / norm};
-    float normed_y = norm_thrust_vector[1];
-    float normed_z = norm_thrust_vector[2];
 
-    debug[3] = norm;
-    debug[4] = norm_thrust_vector[0];
-    debug[5] = norm_thrust_vector[1];
-    debug[6] = norm_thrust_vector[2];
 
+    float normed_y = des_thrust_vector[1] / norm;
+    float normed_z = des_thrust_vector[2] / norm;
 
     // calculate desired servo angles
     float arg_2 = ((k_1 * normed_y) - (k_2 * normed_z)) / (k_1 * k_1 + k_2 * k_2);
     float phi_2 = asin(arg_2);
 
+
     float arg_1 = -((k_1 * normed_z) + (k_2 * normed_y)) / ((k_1 * k_1 + k_2 * k_2) * (float)cos(phi_2));
     float phi_1 = asin(arg_1);
-    // debug[5] = arg_2;
-    // debug[6] = phi_2;
+
 
     // pass angles to servos & motors (TODO might need to do some conversion here?)
     float pwm_1 = 920 + 1200 *((phi_1 + 1.5708)/3.1416); // convert to pwm
@@ -385,12 +380,13 @@ static FAST_CODE void rocketmixer(void)
     servo[1] = 0;
     servo[2] = 0;
     servo[3] = 0;
-    servo[4] = 0;
-    servo[5] = pwm_1;
-    servo[6] = pwm_2;
+    servo[4] = pwm_1;
+    servo[5] = pwm_2;
+    servo[6] = 0;
     servo[7] = 0;
-    motor[0] = des_Tx;
-    motor[1] = des_Mx;
+    // TODO move to writeMotors()
+    // motor[0] = des_Tx;
+    // motor[1] = des_Mx;
 
 
 }
