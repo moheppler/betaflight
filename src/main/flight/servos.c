@@ -388,7 +388,7 @@ static void rocketmixer(void)
     servo[6] = 0;
     servo[7] = 0;
     // TODO move to writeMotors()
-    motor[0] = 0;
+    motor[0] = 400;
     motor[1] = 0;
 
 }
