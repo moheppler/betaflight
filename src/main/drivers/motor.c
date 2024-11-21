@@ -26,6 +26,9 @@
 
 #include "platform.h"
 
+// TODO remove if unused
+#include "build/debug.h"
+
 #ifdef USE_MOTOR
 
 #include "common/maths.h"
@@ -77,6 +80,8 @@ void motorWriteAll(float *values)
 #ifdef USE_PWM_OUTPUT
     if (motorDevice->enabled) {
 #ifdef USE_DSHOT_BITBANG
+
+          
         if (isDshotBitbangActive(&motorConfig()->dev)) {
             // Initialise the output buffers
             if (motorDevice->vTable.updateInit) {
@@ -87,6 +92,9 @@ void motorWriteAll(float *values)
             for (int i = 0; i < motorDevice->count; i++) {
                 motorDevice->vTable.write(i, values[i]);
             }
+             // TODO remove if unused
+            debug[4] = values[0];
+            debug[5] = values[1];
 
             // Don't attempt to write commands to the motors if telemetry is still being received
             if (motorDevice->vTable.telemetryWait) {

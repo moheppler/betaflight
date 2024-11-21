@@ -388,9 +388,8 @@ static void rocketmixer(void)
     servo[6] = 0;
     servo[7] = 0;
     // TODO move to writeMotors()
-    // motor[0] = des_Tx;
-    // motor[1] = des_Mx;
-
+    motor[0] = 0;
+    motor[1] = 0;
 
 }
 
@@ -398,7 +397,7 @@ void writeServos(void)
 {
     // TODO get rid of servoTable() if things work with rocketmixer()
     
-    servoTable(); 
+    servoTable();
     rocketmixer();
     filterServos();
 
