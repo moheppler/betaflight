@@ -1299,16 +1299,17 @@ static FAST_CODE void rocketmixer(timeUs_t currentTimeUs)
 static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
 {
     uint32_t startTime = 0;
-    if (debugMode == DEBUG_CYCLETIME) {
-        startTime = micros();
-        static uint32_t previousMotorUpdateTime;
-        const uint32_t currentDeltaTime = startTime - previousMotorUpdateTime;
-        debug[2] = currentDeltaTime;
-        debug[3] = currentDeltaTime - targetPidLooptime;
-        previousMotorUpdateTime = startTime;
-    } else if (debugMode == DEBUG_PIDLOOP) {
-        startTime = micros();
-    }
+    // TODO add this back in if needed
+    // if (debugMode == DEBUG_CYCLETIME) {
+    //     startTime = micros();
+    //     static uint32_t previousMotorUpdateTime;
+    //     const uint32_t currentDeltaTime = startTime - previousMotorUpdateTime;
+    //     debug[2] = currentDeltaTime;
+    //     debug[3] = currentDeltaTime - targetPidLooptime;
+    //     previousMotorUpdateTime = startTime;
+    // } else if (debugMode == DEBUG_PIDLOOP) {
+    //     startTime = micros();
+    // }
 
     // TODO don't need this for now with the modification in servos.c
     // ROCKET MODIFICATION
@@ -1316,10 +1317,10 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
         rocketmixer(currentTimeUs);
     #else
         mixTable(currentTimeUs);
-        // debug[0] = motor[0];
-        // debug[1] = motor[1];
     #endif
-    // int timeSinceBoot_tS
+    int timeSinceBoot_tS = (int)(currentTimeUs - lastDisarmTimeUs)/100000;
+    debug[0] = timeSinceBoot_tS;
+
 
 #ifdef USE_SERVOS
     // motor outputs are used as sources for servo mixing, so motors must be calculated using mixTable() before servos.
@@ -1327,9 +1328,16 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
         writeServos();
     }
 #endif
+
     // debug[2] = motor[0];
     // debug[3] = motor[1];
-    debug[0] = (int)(currentTimeUs - lastDisarmTimeUs)/1000000;
+    // debug[6] = timeSinceBoot_tS;
+
+    // TODO need this so the ESC starts with a zero command can maybe fix this later
+    if (timeSinceBoot_tS < 300) {
+        motor[0] = 0;
+        motor[1] = 0;
+    }
 
     writeMotors();
 
