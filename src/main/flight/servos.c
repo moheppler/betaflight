@@ -390,9 +390,10 @@ static void rocketmixer(void)
     // TODO move to writeMotors()
     // motor_disarmed[0] = 400;
     motor[0] = 400;
+    // motor_disarmed[0] = 400;
     // motor[1] = 0;
-    debug[6] = motor_disarmed[0];
-    debug[7] = motor_disarmed[1];
+    // debug[6] = motor_disarmed[0];
+    // debug[7] = motor_disarmed[1];
 
 }
 

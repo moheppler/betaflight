@@ -469,8 +469,6 @@ static void applyMixToMotors(const float motorMix[MAX_SUPPORTED_MOTORS], motorMi
 #endif
         if (failsafeIsActive()) {
 #ifdef USE_DSHOT
-            debug[i] = 7;
-            debug[1+2] = motorRangeMin;
             if (isMotorProtocolDshot()) {
                 motorOutput = (motorOutput < motorRangeMin) ? mixerRuntime.disarmMotorOutput : motorOutput; // Prevent getting into special reserved range
  

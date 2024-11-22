@@ -1319,6 +1319,7 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
         // debug[0] = motor[0];
         // debug[1] = motor[1];
     #endif
+    // int timeSinceBoot_tS
 
 #ifdef USE_SERVOS
     // motor outputs are used as sources for servo mixing, so motors must be calculated using mixTable() before servos.
@@ -1328,6 +1329,7 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
 #endif
     // debug[2] = motor[0];
     // debug[3] = motor[1];
+    debug[0] = (int)(currentTimeUs - lastDisarmTimeUs)/1000000;
 
     writeMotors();
 
