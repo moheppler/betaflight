@@ -67,6 +67,9 @@
 
 #include "mixer.h"
 
+// TODO remove if unused
+#include "build/debug.h"
+
 #define DYN_LPF_THROTTLE_STEPS             100
 #define DYN_LPF_THROTTLE_UPDATE_DELAY_US  5000 // minimum of 5ms between updates
 
@@ -466,14 +469,18 @@ static void applyMixToMotors(const float motorMix[MAX_SUPPORTED_MOTORS], motorMi
 #endif
         if (failsafeIsActive()) {
 #ifdef USE_DSHOT
+            debug[i] = 7;
+            debug[1+2] = motorRangeMin;
             if (isMotorProtocolDshot()) {
                 motorOutput = (motorOutput < motorRangeMin) ? mixerRuntime.disarmMotorOutput : motorOutput; // Prevent getting into special reserved range
+ 
             }
 #endif
             motorOutput = constrainf(motorOutput, mixerRuntime.disarmMotorOutput, motorRangeMax);
         } else {
             motorOutput = constrainf(motorOutput, motorRangeMin, motorRangeMax);
         }
+ 
         motor[i] = motorOutput;
     }
 
@@ -843,7 +850,9 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
         // Apply the mix to motor endpoints
         applyMixToMotors(motorMix, activeMixer);
         // TODO extremely crude forced arming
-        mixerRuntime.disarmMotorOutput = 0; 
+        // mixerRuntime.disarmMotorOutput = 0; 
+        // debug[6] = motor_disarmed[0];
+        // debug[7] = motor_disarmed
     }
 }
 

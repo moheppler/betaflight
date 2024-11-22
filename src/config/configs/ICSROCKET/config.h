@@ -132,5 +132,5 @@
 #define DEFAULT_DSHOT_BURST             DSHOT_DMAR_AUTO
 #define DEFAULT_DSHOT_BITBANG           DSHOT_BITBANG_ON // TODO turn this on here instead of having to do it in the CLI
 #define DEFAULT_DSHOT_TELEMETRY         DSHOT_TELEMETRY_ON
-
+#define USE_DSHOT // TODO remove if not needed
 #define DEFAULT_VOLTAGE_METER_SOURCE    VOLTAGE_METER_ADC

@@ -1316,8 +1316,8 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
         rocketmixer(currentTimeUs);
     #else
         mixTable(currentTimeUs);
-        debug[0] = motor[0];
-        debug[1] = motor[1];
+        // debug[0] = motor[0];
+        // debug[1] = motor[1];
     #endif
 
 #ifdef USE_SERVOS
@@ -1326,8 +1326,8 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
         writeServos();
     }
 #endif
-    debug[2] = motor[0];
-    debug[3] = motor[1];
+    // debug[2] = motor[0];
+    // debug[3] = motor[1];
 
     writeMotors();
 
