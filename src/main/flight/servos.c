@@ -446,18 +446,18 @@ void writeServos(int timeSinceBoot_tS)
     uint8_t servoIndex = 0;
     switch (getMixerMode()) {
     case MIXER_TRI:
-    case MIXER_CUSTOM_TRI:
-        // We move servo if unarmed flag set or armed
-        if (!(servosTricopterIsEnabledServoUnarmed() || ARMING_FLAG(ARMED))) {
-            servo[SERVO_RUDDER] = 0; // kill servo signal completely.
-        }
-        writeServoWithTracking(servoIndex++, SERVO_RUDDER);
-        break;
+    // case MIXER_CUSTOM_TRI:
+    //     // We move servo if unarmed flag set or armed
+    //     if (!(servosTricopterIsEnabledServoUnarmed() || ARMING_FLAG(ARMED))) {
+    //         servo[SERVO_RUDDER] = 0; // kill servo signal completely.
+    //     }
+    //     writeServoWithTracking(servoIndex++, SERVO_RUDDER);
+    //     break;
 
-    case MIXER_FLYING_WING:
-        writeServoWithTracking(servoIndex++, SERVO_FLAPPERON_1);
-        writeServoWithTracking(servoIndex++, SERVO_FLAPPERON_2);
-        break;
+    // case MIXER_FLYING_WING:
+    //     writeServoWithTracking(servoIndex++, SERVO_FLAPPERON_1);
+    //     writeServoWithTracking(servoIndex++, SERVO_FLAPPERON_2);
+    //     break;
 
     case MIXER_CUSTOM_AIRPLANE:
     case MIXER_AIRPLANE:
