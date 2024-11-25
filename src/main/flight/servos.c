@@ -344,7 +344,8 @@ static void rocketmixer(int timeSinceBoot_tS)
     float des_Mx = pidData[FD_ROLL].Sum; // check axes
     float des_My = pidData[FD_PITCH].Sum;
     float des_Mz = pidData[FD_YAW].Sum;
-    float des_Tx = 1000 + 500 * sin(timeSinceBoot_tS/10); // need to figure out how to get this
+    float des_Tx = 1000;
+    // float des_Tx = 1000 + 500 * sin(timeSinceBoot_tS/10); // need to figure out how to get this
     debug[2] = des_Mx;
     // UNUSED(timeSinceBoot_tS);
 
