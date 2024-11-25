@@ -91,12 +91,7 @@ void motorWriteAll(float *values)
             // Update the motor data
             for (int i = 0; i < motorDevice->count; i++) {
                 motorDevice->vTable.write(i, values[i]);
-                // debug[i] = (int)&motorConfig()->mincommand;
-                // debug[i + 2]= (int)&motorConfig()->maxthrottle;
-                // debug[7] = 50;
-            }
-             // TODO remove if unused
- 
+                } 
 
             // Don't attempt to write commands to the motors if telemetry is still being received
             if (motorDevice->vTable.telemetryWait) {

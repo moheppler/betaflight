@@ -1325,7 +1325,8 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
 #ifdef USE_SERVOS
     // motor outputs are used as sources for servo mixing, so motors must be calculated using mixTable() before servos.
     if (isMixerUsingServos()) {
-        writeServos();
+        // TODO remove argument
+        writeServos(timeSinceBoot_tS);
     }
 #endif
 

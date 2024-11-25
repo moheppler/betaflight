@@ -847,10 +847,6 @@ FAST_CODE_NOINLINE void mixTable(timeUs_t currentTimeUs)
     } else {
         // Apply the mix to motor endpoints
         applyMixToMotors(motorMix, activeMixer);
-        // TODO extremely crude forced arming
-        // mixerRuntime.disarmMotorOutput = 0; 
-        // debug[6] = motor_disarmed[0];
-        // debug[7] = motor_disarmed
     }
 }
 
