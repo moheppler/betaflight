@@ -328,10 +328,10 @@ static void updateGimbalServos(uint8_t firstServoIndex)
     writeServoWithTracking(firstServoIndex + 1, SERVO_GIMBAL_ROLL);
 }
 
-static void servoTable(void);
+// static void servoTable(void);
 static void filterServos(void);
 
-static void rocketmixer(void) 
+static void rocketmixer(int timeSinceBoot_tS)
 {
     
     float r_g = 0.6744; // distance from CoM to center of thrust [m] 
@@ -341,12 +341,14 @@ static void rocketmixer(void)
     float k_2 = 0.17364817766;
     
     // get command torques & thrust
-    // float des_Mx = pidData[FD_ROLL].Sum; // check axes
+    float des_Mx = pidData[FD_ROLL].Sum; // check axes
     float des_My = pidData[FD_PITCH].Sum;
     float des_Mz = pidData[FD_YAW].Sum;
-    float des_Tx = 500; // need to figure out how to get this
+    float des_Tx = 1000 + 500 * sin(timeSinceBoot_tS/10); // need to figure out how to get this
+    debug[2] = des_Mx;
+    // UNUSED(timeSinceBoot_tS);
 
-    
+
     // calculate desired thrust vector
     float des_thrust_vector[3] = {des_Tx, -des_Mz / r_g, des_My / r_g};
 
@@ -388,8 +390,10 @@ static void rocketmixer(void)
     servo[6] = 0;
     servo[7] = 0;
     // TODO move to writeMotors()
-    // motor_disarmed[0] = 400;
-    motor[0] = 400;
+    // motor[0] = des_Tx / 10;
+    // motor[1] = des_Tx / 10;
+    motor[0] = 0;
+    motor[1] = 0;
     // motor_disarmed[0] = 400;
     // motor[1] = 0;
     // debug[6] = motor_disarmed[0];
@@ -397,12 +401,12 @@ static void rocketmixer(void)
 
 }
 
-void writeServos(void)
+void writeServos(int timeSinceBoot_tS)
 {
     // TODO get rid of servoTable() if things work with rocketmixer()
     
-    servoTable();
-    rocketmixer();
+    // servoTable();
+    rocketmixer(timeSinceBoot_tS);
     filterServos();
 
 
@@ -557,58 +561,58 @@ void servoMixer(void)
     }
 }
 
-static void servoTable(void)
-{
-    // airplane / servo mixes
-    switch (getMixerMode()) {
-    case MIXER_CUSTOM_TRI:
-    case MIXER_TRI:
-        servosTricopterMixer();
-        break;
-    case MIXER_CUSTOM_AIRPLANE:
-    case MIXER_FLYING_WING:
-    case MIXER_AIRPLANE:
-    case MIXER_BICOPTER:
-    case MIXER_DUALCOPTER:
-    case MIXER_SINGLECOPTER:
-    case MIXER_HELI_120_CCPM:
-    case MIXER_GIMBAL:
-        servoMixer();
-        break;
+// static void servoTable(void)
+// {
+//     // airplane / servo mixes
+//     switch (getMixerMode()) {
+//     case MIXER_CUSTOM_TRI:
+//     case MIXER_TRI:
+//         servosTricopterMixer();
+//         break;
+//     case MIXER_CUSTOM_AIRPLANE:
+//     case MIXER_FLYING_WING:
+//     case MIXER_AIRPLANE:
+//     case MIXER_BICOPTER:
+//     case MIXER_DUALCOPTER:
+//     case MIXER_SINGLECOPTER:
+//     case MIXER_HELI_120_CCPM:
+//     case MIXER_GIMBAL:
+//         servoMixer();
+//         break;
 
-    /*
-    case MIXER_GIMBAL:
-        servo[SERVO_GIMBAL_PITCH] = (((int32_t)servoParams(SERVO_GIMBAL_PITCH)->rate * attitude.values.pitch) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
-        servo[SERVO_GIMBAL_ROLL] = (((int32_t)servoParams(SERVO_GIMBAL_ROLL)->rate * attitude.values.roll) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
-        break;
-    */
+//     /*
+//     case MIXER_GIMBAL:
+//         servo[SERVO_GIMBAL_PITCH] = (((int32_t)servoParams(SERVO_GIMBAL_PITCH)->rate * attitude.values.pitch) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
+//         servo[SERVO_GIMBAL_ROLL] = (((int32_t)servoParams(SERVO_GIMBAL_ROLL)->rate * attitude.values.roll) / 50) + determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
+//         break;
+//     */
 
-    default:
-        break;
-    }
+//     default:
+//         break;
+//     }
 
-    // camera stabilization
-    if (featureIsEnabled(FEATURE_SERVO_TILT)) {
-        // center at fixed position, or vary either pitch or roll by RC channel
-        servo[SERVO_GIMBAL_PITCH] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
-        servo[SERVO_GIMBAL_ROLL] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
+//     // camera stabilization
+//     if (featureIsEnabled(FEATURE_SERVO_TILT)) {
+//         // center at fixed position, or vary either pitch or roll by RC channel
+//         servo[SERVO_GIMBAL_PITCH] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_PITCH);
+//         servo[SERVO_GIMBAL_ROLL] = determineServoMiddleOrForwardFromChannel(SERVO_GIMBAL_ROLL);
 
-        if (IS_RC_MODE_ACTIVE(BOXCAMSTAB)) {
-            if (gimbalConfig()->mode == GIMBAL_MODE_MIXTILT) {
-                servo[SERVO_GIMBAL_PITCH] -= (-(int32_t)servoParams(SERVO_GIMBAL_PITCH)->rate) * attitude.values.pitch / 50 - (int32_t)servoParams(SERVO_GIMBAL_ROLL)->rate * attitude.values.roll / 50;
-                servo[SERVO_GIMBAL_ROLL] += (-(int32_t)servoParams(SERVO_GIMBAL_PITCH)->rate) * attitude.values.pitch / 50 + (int32_t)servoParams(SERVO_GIMBAL_ROLL)->rate * attitude.values.roll / 50;
-            } else {
-                servo[SERVO_GIMBAL_PITCH] += (int32_t)servoParams(SERVO_GIMBAL_PITCH)->rate * attitude.values.pitch / 50;
-                servo[SERVO_GIMBAL_ROLL] += (int32_t)servoParams(SERVO_GIMBAL_ROLL)->rate * attitude.values.roll  / 50;
-            }
-        }
-    }
+//         if (IS_RC_MODE_ACTIVE(BOXCAMSTAB)) {
+//             if (gimbalConfig()->mode == GIMBAL_MODE_MIXTILT) {
+//                 servo[SERVO_GIMBAL_PITCH] -= (-(int32_t)servoParams(SERVO_GIMBAL_PITCH)->rate) * attitude.values.pitch / 50 - (int32_t)servoParams(SERVO_GIMBAL_ROLL)->rate * attitude.values.roll / 50;
+//                 servo[SERVO_GIMBAL_ROLL] += (-(int32_t)servoParams(SERVO_GIMBAL_PITCH)->rate) * attitude.values.pitch / 50 + (int32_t)servoParams(SERVO_GIMBAL_ROLL)->rate * attitude.values.roll / 50;
+//             } else {
+//                 servo[SERVO_GIMBAL_PITCH] += (int32_t)servoParams(SERVO_GIMBAL_PITCH)->rate * attitude.values.pitch / 50;
+//                 servo[SERVO_GIMBAL_ROLL] += (int32_t)servoParams(SERVO_GIMBAL_ROLL)->rate * attitude.values.roll  / 50;
+//             }
+//         }
+//     }
 
-    // constrain servos
-    for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
-        servo[i] = constrain(servo[i], servoParams(i)->min, servoParams(i)->max); // limit the values
-    }
-}
+//     // constrain servos
+//     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
+//         servo[i] = constrain(servo[i], servoParams(i)->min, servoParams(i)->max); // limit the values
+//     }
+// }
 
 bool isMixerUsingServos(void)
 {
