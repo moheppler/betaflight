@@ -143,7 +143,7 @@ typedef struct servoProfile_s {
 extern int16_t servo[MAX_SUPPORTED_SERVOS];
 
 bool isMixerUsingServos(void);
-void writeServos(int timeSinceBoot_tS);
+void writeServos(double timeSinceBoot_tS);
 void servoMixerLoadMix(int index);
 void loadCustomServoMixer(void);
 int servoDirection(int servoIndex, int fromChannel);

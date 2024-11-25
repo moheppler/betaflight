@@ -303,15 +303,15 @@ void servoMixerLoadMix(int index)
     }
 }
 
-STATIC_UNIT_TESTED void forwardAuxChannelsToServos(uint8_t firstServoIndex)
-{
-    // start forwarding from this channel
-    int channelOffset = servoConfig()->channelForwardingStartChannel;
-    const int maxAuxChannelCount = MIN(MAX_AUX_CHANNEL_COUNT, rxConfig()->max_aux_channel);
-    for (int servoOffset = 0; servoOffset < maxAuxChannelCount && channelOffset < MAX_SUPPORTED_RC_CHANNEL_COUNT; servoOffset++) {
-        pwmWriteServo(firstServoIndex + servoOffset, rcData[channelOffset++]);
-    }
-}
+// STATIC_UNIT_TESTED void forwardAuxChannelsToServos(uint8_t firstServoIndex)
+// {
+//     // start forwarding from this channel
+//     int channelOffset = servoConfig()->channelForwardingStartChannel;
+//     const int maxAuxChannelCount = MIN(MAX_AUX_CHANNEL_COUNT, rxConfig()->max_aux_channel);
+//     for (int servoOffset = 0; servoOffset < maxAuxChannelCount && channelOffset < MAX_SUPPORTED_RC_CHANNEL_COUNT; servoOffset++) {
+//         pwmWriteServo(firstServoIndex + servoOffset, rcData[channelOffset++]);
+//     }
+// }
 
 // Write and keep track of written servos
 
@@ -325,16 +325,16 @@ static void writeServoWithTracking(uint8_t index, servoIndex_e servoname)
     servoWritten |= (1 << servoname);
 }
 
-static void updateGimbalServos(uint8_t firstServoIndex)
-{
-    writeServoWithTracking(firstServoIndex + 0, SERVO_GIMBAL_PITCH);
-    writeServoWithTracking(firstServoIndex + 1, SERVO_GIMBAL_ROLL);
-}
+// static void updateGimbalServos(uint8_t firstServoIndex)
+// {
+//     writeServoWithTracking(firstServoIndex + 0, SERVO_GIMBAL_PITCH);
+//     writeServoWithTracking(firstServoIndex + 1, SERVO_GIMBAL_ROLL);
+// }
 
 // static void servoTable(void);
 static void filterServos(void);
 
-static void rocketmixer(int timeSinceBoot_tS)
+static void rocketmixer(double timeSinceBoot_tS)
 {
     
     float r_g = 0.6744; // distance from CoM to center of thrust [m] 
@@ -342,13 +342,26 @@ static void rocketmixer(int timeSinceBoot_tS)
     // inverse kinematics constants
     float k_1 = 0.98480775301;
     float k_2 = 0.17364817766;
+
+    // define torque and thrust saturations
+    float max_Mx = 10000; 
+    float max_My = 10000;
+    float max_Mz = 10000;
+    float max_Tx = 10000;
+    float min_Tx = 0.01; // need this because inverse kinematics breaks when Tx <= 0
     
     // get command torques & thrust
-    float des_Mx = pidData[FD_ROLL].Sum; // check axes
+    float des_Mx = pidData[FD_ROLL].Sum; // TODO check axes
     float des_My = pidData[FD_PITCH].Sum;
     float des_Mz = pidData[FD_YAW].Sum;
-    // float des_Tx = 1000;
+    
+    des_Mx = constrainf(des_Mx, -max_Mx, max_Mx);
+    des_My = constrainf(des_My, -max_My, max_My);
+    des_Mz = constrainf(des_Mz, -max_Mz, max_Mz);
+
     float des_Tx = 1000 + 1500 * sin(timeSinceBoot_tS/10); // need to figure out how to get this
+    
+    des_Tx = constrainf(des_Tx, min_Tx, max_Tx);
     debug[1] = des_Tx;
     // UNUSED(timeSinceBoot_tS);
 
@@ -433,7 +446,7 @@ static void rocketmixer(int timeSinceBoot_tS)
 
 }
 
-void writeServos(int timeSinceBoot_tS)
+void writeServos(double timeSinceBoot_tS)
 {
     // TODO get rid of servoTable() if things work with rocketmixer()
     
@@ -459,7 +472,7 @@ void writeServos(int timeSinceBoot_tS)
     //     writeServoWithTracking(servoIndex++, SERVO_FLAPPERON_2);
     //     break;
 
-    case MIXER_CUSTOM_AIRPLANE:
+    // case MIXER_CUSTOM_AIRPLANE:
     case MIXER_AIRPLANE:
         for (int i = SERVO_PLANE_INDEX_MIN; i <= SERVO_PLANE_INDEX_MAX; i++) {
             writeServoWithTracking(servoIndex++, i);
@@ -496,10 +509,10 @@ void writeServos(int timeSinceBoot_tS)
     }
 
     // Two servos for SERVO_TILT, if enabled
-    if (featureIsEnabled(FEATURE_SERVO_TILT) || getMixerMode() == MIXER_GIMBAL) {
-        updateGimbalServos(servoIndex);
-        servoIndex += 2;
-    }
+    // if (featureIsEnabled(FEATURE_SERVO_TILT) || getMixerMode() == MIXER_GIMBAL) {
+    //     updateGimbalServos(servoIndex);
+    //     servoIndex += 2;
+    // }
 
     // Scan servos and write those marked forwarded and not written yet
     for (int i = 0; i < MAX_SUPPORTED_SERVOS; i++) {
@@ -510,10 +523,10 @@ void writeServos(int timeSinceBoot_tS)
     }
 
     // forward AUX to remaining servo outputs (not constrained)
-    if (featureIsEnabled(FEATURE_CHANNEL_FORWARDING)) {
-        forwardAuxChannelsToServos(servoIndex);
-        servoIndex += MAX_AUX_CHANNEL_COUNT;
-    }
+    // if (featureIsEnabled(FEATURE_CHANNEL_FORWARDING)) {
+    //     forwardAuxChannelsToServos(servoIndex);
+    //     servoIndex += MAX_AUX_CHANNEL_COUNT;
+    // }
 }
 
 void servoMixer(void)
