@@ -1335,7 +1335,8 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
     // debug[6] = timeSinceBoot_tS;
 
     // TODO need this so the ESC starts with a zero command can maybe fix this later
-    if (timeSinceBoot_tS < 300) {
+    int motorTimer_tS = 300; // TODO what time after boot do motors start in tenths of seconds
+    if (timeSinceBoot_tS < motorTimer_tS) {
         motor[0] = 0;
         motor[1] = 0;
     }

@@ -55,6 +55,9 @@
 
 #include "rx/rx.h"
 
+// TODO check if needed
+#include "drivers/dshot.h"
+
 // TODO remove if unused
 #include "build/debug.h"
 
@@ -346,8 +349,8 @@ static void rocketmixer(int timeSinceBoot_tS)
     float des_Mz = pidData[FD_YAW].Sum;
     float des_Tx = 1000;
     // float des_Tx = 1000 + 500 * sin(timeSinceBoot_tS/10); // need to figure out how to get this
-    debug[2] = des_Mx;
-    // UNUSED(timeSinceBoot_tS);
+    debug[1] = des_Mx;
+    UNUSED(timeSinceBoot_tS);
 
 
     // calculate desired thrust vector
@@ -374,8 +377,15 @@ static void rocketmixer(int timeSinceBoot_tS)
     float arg_1 = -((k_1 * normed_z) + (k_2 * normed_y)) / ((k_1 * k_1 + k_2 * k_2) * (float)cos(phi_2));
     float phi_1 = asin(arg_1);
 
-    // debug[3] = phi_1 * 1000;
-    // debug[4] = phi_2 * 1000;
+    // Calculate motor speeds
+    float motor_RPM_1 = getMotorFrequencyHz(0);
+    float motor_RPM_2 = getMotorFrequencyHz(1);
+
+    debug[2] = motor_RPM_1*100;
+    debug[3] = motor_RPM_2*100;
+
+
+
 
 
     // pass angles to servos & motors (TODO might need to do some conversion here?)
@@ -391,10 +401,10 @@ static void rocketmixer(int timeSinceBoot_tS)
     servo[6] = 0;
     servo[7] = 0;
     // TODO move to writeMotors()
-    // motor[0] = des_Tx / 10;
-    // motor[1] = des_Tx / 10;
-    motor[0] = 0;
-    motor[1] = 0;
+    motor[0] = des_Tx / 5;
+    motor[1] = des_Tx / 5;
+    // motor[0] = 0;
+    // motor[1] = 0;
     // motor_disarmed[0] = 400;
     // motor[1] = 0;
     // debug[6] = motor_disarmed[0];
