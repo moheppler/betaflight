@@ -158,3 +158,13 @@ static inline float constrainf(float amt, float low, float high)
     else
         return amt;
 }
+
+static inline double constraind(double amt, double low, double high)
+{
+    if (amt < low)
+        return low;
+    else if (amt > high)
+        return high;
+    else
+        return amt;
+}
