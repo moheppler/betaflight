@@ -53,6 +53,8 @@
 #define USE_DSHOT
 #endif
 
+#define USE_GPS
+
 #ifdef USE_DSHOT
 #define USE_DSHOT_BITBANG
 #define USE_DSHOT_TELEMETRY
