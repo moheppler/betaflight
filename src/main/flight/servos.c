@@ -351,19 +351,22 @@ static void rocketmixer(double timeSinceBoot_tS)
     float min_Tx = 150; // need this because inverse kinematics breaks when Tx <= 0
     
     // get command torques & thrust
-    float des_Mx = pidData[FD_ROLL].Sum; // TODO check axes, remove scaling
-    float des_My = pidData[FD_PITCH].Sum;
-    float des_Mz = pidData[FD_YAW].Sum;
+    float des_Mx = pidData[FD_ROLL].Sum/100; // TODO check axes, remove scaling
+    float des_My = pidData[FD_PITCH].Sum/100;
+    float des_Mz = pidData[FD_YAW].Sum/100;
     
     des_Mx = constrainf(des_Mx, -max_Mx, max_Mx);
     des_My = constrainf(des_My, -max_My, max_My);
     des_Mz = constrainf(des_Mz, -max_Mz, max_Mz);
 
-    float des_Tx = 1000 + 1500 * sin(timeSinceBoot_tS/10); // need to figure out how to get this
-    
+    // float des_Tx = 1000 + 1500 * sin(timeSinceBoot_tS/10); // need to figure out how to get this
+    float des_Tx = 10;
     des_Tx = constrainf(des_Tx, min_Tx, max_Tx);
-    debug[1] = des_Tx;
-    // UNUSED(timeSinceBoot_tS);
+    // debug[1] = des_Tx;
+    // debug[2] = des_Mx;
+    // debug[3] = des_My;
+    // debug[4] = des_Mz;
+    UNUSED(timeSinceBoot_tS);
 
 
     // calculate desired thrust vector
@@ -390,9 +393,7 @@ static void rocketmixer(double timeSinceBoot_tS)
     float arg_1 = -((k_1 * normed_z) + (k_2 * normed_y)) / ((k_1 * k_1 + k_2 * k_2) * (float)cos(phi_2));
     float phi_1 = asin(arg_1);
 
-    // Get motor speeds (use doubles for increased precision)
-    // double motor_RPM_1 = getDshotRpm(0); // this is revolutions per second, not radians per second
-    // double motor_RPM_2 = getDshotRpm(1);
+
 
     // debug[2] = motor_RPM_1;
     // debug[3] = motor_RPM_2;
@@ -404,20 +405,29 @@ static void rocketmixer(double timeSinceBoot_tS)
     double max_RPMs = 14000*14000; // maximum RPM squared for motors
 
     double des_common_RPMs = des_Tx / (2 * thrust_constant);
-    debug[2] = sqrt(des_common_RPMs);
+    // debug[2] = sqrt(des_common_RPMs);
     des_common_RPMs = constraind(des_common_RPMs, min_RPMs, max_RPMs);
-    debug[3] = sqrt(des_common_RPMs);
+    // debug[3] = sqrt(des_common_RPMs);
 
     double des_RPMs_diff = des_Mx / torque_constant;
-    debug[4] = des_RPMs_diff;
+    // debug[4] = des_RPMs_diff;
     double max_RPMs_diff = mind(des_common_RPMs, max_RPMs - des_common_RPMs); // maximum RPMs difference between motors
     des_RPMs_diff = constraind(des_RPMs_diff, -max_RPMs_diff, max_RPMs_diff);
-    debug[5] = des_RPMs_diff;
+    // debug[5] = des_RPMs_diff;
 
     double des_RPM_1 = sqrt(des_common_RPMs + des_RPMs_diff);
     double des_RPM_2 = sqrt(des_common_RPMs - des_RPMs_diff);
-    debug[6] = des_RPM_1;
-    debug[7] = des_RPM_2;
+    // debug[6] = des_RPM_1;
+    // debug[7] = des_RPM_2;
+    UNUSED(des_RPM_1);
+    UNUSED(des_RPM_2);
+
+    // Proportional RPM control
+
+    // Get motor speeds (use doubles for increased precision)
+    // double motor_RPM_1 = getDshotRpm(0); // this is revolutions per second, not radians per second
+    // double motor_RPM_2 = getDshotRpm(1);
+
 
 
 
