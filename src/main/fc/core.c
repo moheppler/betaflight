@@ -1319,7 +1319,7 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
         mixTable(currentTimeUs);
     #endif
     double timeSinceBoot_tS = (double)(currentTimeUs - lastDisarmTimeUs)/100000;
-    debug[0] = timeSinceBoot_tS;
+    debug[7] = timeSinceBoot_tS;
 
 
 #ifdef USE_SERVOS

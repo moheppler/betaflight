@@ -405,34 +405,36 @@ static void rocketmixer(double timeSinceBoot_tS)
     float thrust_constant = 2e-8; // thrust constant [N/(revol/min)^2]
     float torque_constant = 3e-10; // torque constant [Nm/(revol/min)^2]
     double min_RPMs = 1000*1000; // minimum RPM squared for motors
-    double max_RPMs = 4300*4300; // maximum RPM squared for motors TODO increase again
+    double max_RPMs = 4800*4800; // maximum RPM squared for motors TODO increase again
 
+    // total RPM of the two fans to generate the desired thrust
     double des_common_RPMs = des_thrust_vector_norm / (2 * thrust_constant);
-    debug[2] = sqrt(des_common_RPMs);
+    // debug[2] = sqrt(des_common_RPMs);
     des_common_RPMs = constraind(des_common_RPMs, min_RPMs, max_RPMs);
-    debug[3] = sqrt(des_common_RPMs);
+    debug[0] = sqrt(des_common_RPMs);
 
+    // RPM difference between the two fans to generate the desired torque around body-x
     double des_RPMs_diff = des_Mx / (2 * torque_constant);
-    debug[4] = sqrt(des_RPMs_diff);
+    // debug[4] = sqrt(des_RPMs_diff);
     double max_RPMs_diff = mind(des_common_RPMs, max_RPMs - des_common_RPMs); // maximum RPMs difference between motors
-    debug[5] = sqrt(max_RPMs_diff);
+    // debug[5] = sqrt(max_RPMs_diff);
     des_RPMs_diff = constraind(des_RPMs_diff, -max_RPMs_diff, max_RPMs_diff);
-    debug[6] = sqrt(des_RPMs_diff);
+    debug[1] = sqrt(des_RPMs_diff);
 
-    // double des_RPM_1 = sqrt(des_common_RPMs + des_RPMs_diff);
-    // double des_RPM_2 = sqrt(des_common_RPMs - des_RPMs_diff);
-    // debug[6] = des_RPM_1;
-    // debug[7] = des_RPM_2;
+    double des_RPM_1 = sqrt(des_common_RPMs + des_RPMs_diff);
+    double des_RPM_2 = sqrt(des_common_RPMs - des_RPMs_diff);
+    debug[2] = des_RPM_1;
+    debug[3] = des_RPM_2;
     // UNUSED(des_RPM_1);
     // UNUSED(des_RPM_2);
 
     // TODO testing remove
-    double des_RPM_1 = 2000;
-    double des_RPM_2 = 2000;
+    // double des_RPM_1 = 2000;
+    // double des_RPM_2 = 2000;
 
-    // Proportional RPM control
+    // Integral RPM control
 
-    double K_p = 0.00005; // TODO probably need to tune this
+    double K_i = 0.0001; // TODO probably need to tune this
 
     // Get motor speeds (use doubles for increased precision)
     double motor_RPM_1 = getDshotRpm(0); // this is revolutions per second, not radians per second
@@ -442,10 +444,13 @@ static void rocketmixer(double timeSinceBoot_tS)
     double error_RPM_1 = des_RPM_1 - motor_RPM_1;
     double error_RPM_2 = des_RPM_2 - motor_RPM_2;
 
+    debug[4] = error_RPM_1;
+    debug[5] = error_RPM_2;
+
 
     // Calculate control signal
-    float control_correction_1 = K_p * error_RPM_1;
-    float control_correction_2 = K_p * error_RPM_2;
+    float control_correction_1 = K_i * error_RPM_1;
+    float control_correction_2 = K_i * error_RPM_2;
 
 
     // Calculate new motor commands
@@ -468,11 +473,10 @@ static void rocketmixer(double timeSinceBoot_tS)
     servo[4] = ServoPWMCommand[0];
     servo[5] = ServoPWMCommand[1];
 
-    motor[0] =  NewMotorCommand[0];
+    motor[0] = NewMotorCommand[0];
     motor[1] = NewMotorCommand[1];
     
-
-    // TODO REMOVE
+    debug[6] = motor[0];
 
     // TODO need this so the ESC starts with a zero command can maybe fix this later
     double motorTimer_tS = 300;
