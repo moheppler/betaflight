@@ -337,7 +337,7 @@ static void filterServos(void);
 static void rocketmixer(double timeSinceBoot_tS)
 {
     // Need persistent bookkeeping variable for motor speeds
-    static float motor_prev[2] = {0.0f, 0.0f};
+    static double integral_term[2] = {0.0, 0.0};
     
     float r_g = 0.6744; // distance from CoM to center of thrust [m] 
     
@@ -346,11 +346,11 @@ static void rocketmixer(double timeSinceBoot_tS)
     float k_2 = 0.17364817766;
 
     // define torque and thrust saturations
-    float max_Mx = 10000; 
-    float max_My = 10000;
-    float max_Mz = 10000;
-    float max_Tx = 10000;
-    float min_Tx = 0.05; // need this because inverse kinematics breaks when Tx <= 0
+    // float max_Mx = 10000; 
+    // float max_My = 10000;
+    // float max_Mz = 10000;
+    // float max_Tx = 10000;
+    // float min_Tx = 0.05; // need this because inverse kinematics breaks when Tx <= 0
     
     // get command torques & thrust
     float des_Mx = pidData[FD_ROLL].Sum/3500; // TODO check axes, remove scaling
@@ -360,11 +360,11 @@ static void rocketmixer(double timeSinceBoot_tS)
     // float des_Tx = 1000 + 1500 * sin(timeSinceBoot_tS/10); // need to figure out how to get this
 
     
-    // saturate torques & thrust
-    des_Mx = constrainf(des_Mx, -max_Mx, max_Mx);
-    des_My = constrainf(des_My, -max_My, max_My);
-    des_Mz = constrainf(des_Mz, -max_Mz, max_Mz);
-    des_Tx = constrainf(des_Tx, min_Tx, max_Tx);
+    // saturate torques & thrust TODO reactivate again
+    // des_Mx = constrainf(des_Mx, -max_Mx, max_Mx);
+    // des_My = constrainf(des_My, -max_My, max_My);
+    // des_Mz = constrainf(des_Mz, -max_Mz, max_Mz);
+    // des_Tx = constrainf(des_Tx, min_Tx, max_Tx);
 
     // debug[1] = des_Tx;
     // debug[2] = des_Mx;
@@ -409,53 +409,59 @@ static void rocketmixer(double timeSinceBoot_tS)
 
     // total RPM of the two fans to generate the desired thrust
     double des_common_RPMs = des_thrust_vector_norm / (2 * thrust_constant);
-    // debug[2] = sqrt(des_common_RPMs);
-    des_common_RPMs = constraind(des_common_RPMs, min_RPMs, max_RPMs);
-    debug[0] = sqrt(des_common_RPMs);
+    des_common_RPMs = constraind(des_common_RPMs, min_RPMs, max_RPMs); // saturation
 
     // RPM difference between the two fans to generate the desired torque around body-x
     double des_RPMs_diff = des_Mx / (2 * torque_constant);
-    // debug[4] = sqrt(des_RPMs_diff);
     double max_RPMs_diff = mind(des_common_RPMs, max_RPMs - des_common_RPMs); // maximum RPMs difference between motors
-    // debug[5] = sqrt(max_RPMs_diff);
-    des_RPMs_diff = constraind(des_RPMs_diff, -max_RPMs_diff, max_RPMs_diff);
-    debug[1] = sqrt(des_RPMs_diff);
+    des_RPMs_diff = constraind(des_RPMs_diff, -max_RPMs_diff, max_RPMs_diff); // saturation
 
-    double des_RPM_1 = sqrt(des_common_RPMs + des_RPMs_diff);
-    double des_RPM_2 = sqrt(des_common_RPMs - des_RPMs_diff);
-    debug[2] = des_RPM_1;
-    debug[3] = des_RPM_2;
-    // UNUSED(des_RPM_1);
-    // UNUSED(des_RPM_2);
+    // allocation of RPMs to the two fans
+    double des_RPM[2] = {sqrt(des_common_RPMs + des_RPMs_diff), sqrt(des_common_RPMs - des_RPMs_diff)};
+    
+    // debug[0] = des_RPM[0];
+    // debug[1] = des_RPM[1];
 
     // TODO testing remove
     // double des_RPM_1 = 2000;
     // double des_RPM_2 = 2000;
 
-    // Integral RPM control
 
-    double K_i = 0.0001; // TODO probably need to tune this
+    // RPM control
 
     // Get motor speeds (use doubles for increased precision)
-    double motor_RPM_1 = getDshotRpm(0); // this is revolutions per second, not radians per second
-    double motor_RPM_2 = getDshotRpm(1);
+    double motor_RPM[2] = {getDshotRpm(0), getDshotRpm(1)}; // this is revolutions per second, not radians per second
+    // double motor_RPM_2 = getDshotRpm(1);
 
     // Calculate error
-    double error_RPM_1 = des_RPM_1 - motor_RPM_1;
-    double error_RPM_2 = des_RPM_2 - motor_RPM_2;
+    double error_RPM[2] = {des_RPM[0] - motor_RPM[0], des_RPM[1] - motor_RPM[1]};
+    // double error_RPM_2 = des_RPM_2 - motor_RPM_2;
 
-    debug[4] = error_RPM_1;
-    debug[5] = error_RPM_2;
+    debug[0] = error_RPM[0];
+    debug[1] = error_RPM[1];
+
+    // Controller gains & saturations
+    double K_p = 0.01; // 200 motor commands gives about 3500RPM, tune a bit on the low side TODO tune
+    double K_i = 0.000012; // TODO NOTE THIS IS TUNED FOR 2 kHz RATE, NEED TO CHANGE AGAIN IF RATE CHANGESTODO probably need to tune this
+    // double max_integral_term = 0.1; // saturation for integral term
+
+    // Compute control signals
+    double proportional_term[2] = {K_p * error_RPM[0], K_p * error_RPM[1]};
+    integral_term[0] += K_i * error_RPM[0];
+    integral_term[1] += K_i * error_RPM[1];
+    
+    debug[2] = proportional_term[0];
+    debug[3] = proportional_term[1];
+    debug[4] = integral_term[0];
+    debug[5] = integral_term[1];
+
+    
 
 
-    // Calculate control signal
-    float control_correction_1 = K_i * error_RPM_1;
-    float control_correction_2 = K_i * error_RPM_2;
-
-
-    // Calculate new motor commands
-    float NewMotorCommand[2] = {motor_prev[0] + control_correction_1, motor_prev[1] + control_correction_2};
-
+    // Calculate motor commands
+    double zero_RPM_offset = 50; // offset as DSHOT input seems to go from 50 to 2050
+    float NewMotorCommand[2] = {zero_RPM_offset + proportional_term[0] + integral_term[0], zero_RPM_offset + proportional_term[1] + integral_term[1]};
+    debug[6] = NewMotorCommand[0];
 
     // saturate angles and speeds to servos & motors (TODO might need to do some conversion here?)
     float minServoPWMCommand = 920;
@@ -464,7 +470,7 @@ static void rocketmixer(double timeSinceBoot_tS)
     ServoPWMCommand[1] = constrainf(ServoPWMCommand[1], minServoPWMCommand, maxServoPWMCommand);
 
     float minMotorCommand = 50;
-    float maxMotorCommand = 1100; //TODO increase again when it's safe
+    float maxMotorCommand = 1500; //TODO increase again when it's safe
     NewMotorCommand[0] = constrainf(NewMotorCommand[0], minMotorCommand, maxMotorCommand);
     NewMotorCommand[1] = constrainf(NewMotorCommand[1], minMotorCommand, maxMotorCommand);
 
@@ -483,13 +489,9 @@ static void rocketmixer(double timeSinceBoot_tS)
     if (timeSinceBoot_tS < motorTimer_tS) {
         motor[0] = 0;
         motor[1] = 0;
-        motor_prev[0] = 0.0;
-        motor_prev[1] = 0.0;
+        integral_term[0] = 0.0;
+        integral_term[1] = 0.0;
     }
-    
-    // bookkeeping motor commands
-    motor_prev[0] = motor[0];
-    motor_prev[1] = motor[1];
 }
 
 void writeServos(double timeSinceBoot_tS)
