@@ -350,25 +350,26 @@ static void rocketmixer(double timeSinceBoot_tS)
     float max_My = 10000;
     float max_Mz = 10000;
     float max_Tx = 10000;
-    float min_Tx = 150; // need this because inverse kinematics breaks when Tx <= 0
+    float min_Tx = 0.05; // need this because inverse kinematics breaks when Tx <= 0
     
     // get command torques & thrust
-    float des_Mx = pidData[FD_ROLL].Sum/100; // TODO check axes, remove scaling
-    float des_My = pidData[FD_PITCH].Sum/100;
-    float des_Mz = pidData[FD_YAW].Sum/100;
+    float des_Mx = pidData[FD_ROLL].Sum/3500; // TODO check axes, remove scaling
+    float des_My = pidData[FD_PITCH].Sum/500;
+    float des_Mz = pidData[FD_YAW].Sum/500;
+    float des_Tx = 0.5; // TODO get from MSP
+    // float des_Tx = 1000 + 1500 * sin(timeSinceBoot_tS/10); // need to figure out how to get this
+
     
+    // saturate torques & thrust
     des_Mx = constrainf(des_Mx, -max_Mx, max_Mx);
     des_My = constrainf(des_My, -max_My, max_My);
     des_Mz = constrainf(des_Mz, -max_Mz, max_Mz);
-
-    // float des_Tx = 1000 + 1500 * sin(timeSinceBoot_tS/10); // need to figure out how to get this
-    float des_Tx = 10;
     des_Tx = constrainf(des_Tx, min_Tx, max_Tx);
+
     // debug[1] = des_Tx;
     // debug[2] = des_Mx;
     // debug[3] = des_My;
     // debug[4] = des_Mz;
-    // UNUSED(timeSinceBoot_tS);
 
 
     // calculate desired thrust vector
@@ -379,13 +380,14 @@ static void rocketmixer(double timeSinceBoot_tS)
     // debug[2] = des_thrust_vector[2] * 10;
 
     // find normalized thrust vector and extract y- and z-components
-    float norm = sqrtf(des_thrust_vector[0] * des_thrust_vector[0] +
+    float des_thrust_vector_norm = sqrtf(des_thrust_vector[0] * des_thrust_vector[0] +
                        des_thrust_vector[1] * des_thrust_vector[1] +
                        des_thrust_vector[2] * des_thrust_vector[2]);
 
+    float normed_y = des_thrust_vector[1] / des_thrust_vector_norm;
+    float normed_z = des_thrust_vector[2] / des_thrust_vector_norm;
 
-    float normed_y = des_thrust_vector[1] / norm;
-    float normed_z = des_thrust_vector[2] / norm;
+    debug[1] = des_thrust_vector_norm * 100;
 
     // calculate desired servo angles
     float arg_2 = (-(k_1 * normed_y) + (k_2 * normed_z)) / (k_1 * k_1 + k_2 * k_2);
@@ -394,26 +396,28 @@ static void rocketmixer(double timeSinceBoot_tS)
     float arg_1 = -((k_1 * normed_z) + (k_2 * normed_y)) / ((k_1 * k_1 + k_2 * k_2) * (float)cos(phi_2));
     float phi_1 = asin(arg_1);
 
+
     // convert to pwm
     float ServoPWMCommand[2] = {920 + 1200 *((phi_1 + 1.5708)/3.1416), 920 + 1200 *((phi_2 + 1.5708)/3.1416)};
 
 
-    // Calculate command RPM based on desired thrust and torque
+    // Calculate command RPM based on desired thrust and torque TODO tune these
     float thrust_constant = 2e-8; // thrust constant [N/(revol/min)^2]
     float torque_constant = 3e-10; // torque constant [Nm/(revol/min)^2]
     double min_RPMs = 1000*1000; // minimum RPM squared for motors
-    double max_RPMs = 14000*14000; // maximum RPM squared for motors
+    double max_RPMs = 4300*4300; // maximum RPM squared for motors TODO increase again
 
-    double des_common_RPMs = des_Tx / (2 * thrust_constant);
-    // debug[2] = sqrt(des_common_RPMs);
+    double des_common_RPMs = des_thrust_vector_norm / (2 * thrust_constant);
+    debug[2] = sqrt(des_common_RPMs);
     des_common_RPMs = constraind(des_common_RPMs, min_RPMs, max_RPMs);
-    // debug[3] = sqrt(des_common_RPMs);
+    debug[3] = sqrt(des_common_RPMs);
 
-    double des_RPMs_diff = des_Mx / torque_constant;
-    // debug[4] = des_RPMs_diff;
+    double des_RPMs_diff = des_Mx / (2 * torque_constant);
+    debug[4] = sqrt(des_RPMs_diff);
     double max_RPMs_diff = mind(des_common_RPMs, max_RPMs - des_common_RPMs); // maximum RPMs difference between motors
+    debug[5] = sqrt(max_RPMs_diff);
     des_RPMs_diff = constraind(des_RPMs_diff, -max_RPMs_diff, max_RPMs_diff);
-    // debug[5] = des_RPMs_diff;
+    debug[6] = sqrt(des_RPMs_diff);
 
     // double des_RPM_1 = sqrt(des_common_RPMs + des_RPMs_diff);
     // double des_RPM_2 = sqrt(des_common_RPMs - des_RPMs_diff);
@@ -423,8 +427,8 @@ static void rocketmixer(double timeSinceBoot_tS)
     // UNUSED(des_RPM_2);
 
     // TODO testing remove
-    double des_RPM_1 = 4500;
-    double des_RPM_2 = 2775;
+    double des_RPM_1 = 2000;
+    double des_RPM_2 = 2000;
 
     // Proportional RPM control
 
@@ -443,13 +447,11 @@ static void rocketmixer(double timeSinceBoot_tS)
     float control_correction_1 = K_p * error_RPM_1;
     float control_correction_2 = K_p * error_RPM_2;
 
-    debug[3] = control_correction_1 * 100;
-    debug[4] = control_correction_2 * 100;
 
-    // Calculate new control signals
+    // Calculate new motor commands
     float NewMotorCommand[2] = {motor_prev[0] + control_correction_1, motor_prev[1] + control_correction_2};
 
-  
+
     // saturate angles and speeds to servos & motors (TODO might need to do some conversion here?)
     float minServoPWMCommand = 920;
     float maxServoPWMCommand = 2120;
@@ -457,9 +459,10 @@ static void rocketmixer(double timeSinceBoot_tS)
     ServoPWMCommand[1] = constrainf(ServoPWMCommand[1], minServoPWMCommand, maxServoPWMCommand);
 
     float minMotorCommand = 50;
-    float maxMotorCommand = 2000;
+    float maxMotorCommand = 1100; //TODO increase again when it's safe
     NewMotorCommand[0] = constrainf(NewMotorCommand[0], minMotorCommand, maxMotorCommand);
     NewMotorCommand[1] = constrainf(NewMotorCommand[1], minMotorCommand, maxMotorCommand);
+
 
     // pass angles and speeds to servos & motors (TODO might need to do some conversion here?)
     servo[4] = ServoPWMCommand[0];
@@ -467,6 +470,9 @@ static void rocketmixer(double timeSinceBoot_tS)
 
     motor[0] =  NewMotorCommand[0];
     motor[1] = NewMotorCommand[1];
+    
+
+    // TODO REMOVE
 
     // TODO need this so the ESC starts with a zero command can maybe fix this later
     double motorTimer_tS = 300;
@@ -476,7 +482,8 @@ static void rocketmixer(double timeSinceBoot_tS)
         motor_prev[0] = 0.0;
         motor_prev[1] = 0.0;
     }
-
+    
+    // bookkeeping motor commands
     motor_prev[0] = motor[0];
     motor_prev[1] = motor[1];
 }
