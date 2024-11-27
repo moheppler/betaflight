@@ -1319,7 +1319,7 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
         mixTable(currentTimeUs);
     #endif
     double timeSinceBoot_tS = (double)(currentTimeUs - lastDisarmTimeUs)/100000;
-    // debug[0] = timeSinceBoot_tS;
+    debug[0] = timeSinceBoot_tS;
 
 
 #ifdef USE_SERVOS
@@ -1329,17 +1329,6 @@ static FAST_CODE void subTaskMotorUpdate(timeUs_t currentTimeUs)
         writeServos(timeSinceBoot_tS);
     }
 #endif
-
-    // debug[2] = motor[0];
-    // debug[3] = motor[1];
-    // debug[6] = timeSinceBoot_tS;
-
-    // TODO need this so the ESC starts with a zero command can maybe fix this later
-    double motorTimer_tS = 300; // TODO what time after boot do motors start in tenths of seconds
-    if (timeSinceBoot_tS < motorTimer_tS) {
-        motor[0] = 0;
-        motor[1] = 0;
-    }
 
     writeMotors();
 

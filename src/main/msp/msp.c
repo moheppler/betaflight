@@ -2691,10 +2691,10 @@ static mspResult_e mspProcessInCommand(mspDescriptor_t srcDesc, int16_t cmdMSP, 
                 for (int i = 0; i < channelCount; i++) {
                     frame[i] = sbufReadU16(src);
                 }
-                debug[0] = frame[0];
-                debug[1] = frame[1];
-                debug[2] = frame[2];
-                debug[3] = frame[3];
+                // debug[0] = frame[0];
+                // debug[1] = frame[1];
+                // debug[2] = frame[2];
+                // debug[3] = frame[3];
                 rxMspFrameReceive(frame, channelCount);
             }
         }

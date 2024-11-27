@@ -336,6 +336,8 @@ static void filterServos(void);
 
 static void rocketmixer(double timeSinceBoot_tS)
 {
+    // Need persistent bookkeeping variable for motor speeds
+    static float motor_prev[2] = {1.0f, 1.0f};
     
     float r_g = 0.6744; // distance from CoM to center of thrust [m] 
     
@@ -366,7 +368,7 @@ static void rocketmixer(double timeSinceBoot_tS)
     // debug[2] = des_Mx;
     // debug[3] = des_My;
     // debug[4] = des_Mz;
-    UNUSED(timeSinceBoot_tS);
+    // UNUSED(timeSinceBoot_tS);
 
 
     // calculate desired thrust vector
@@ -389,14 +391,12 @@ static void rocketmixer(double timeSinceBoot_tS)
     float arg_2 = (-(k_1 * normed_y) + (k_2 * normed_z)) / (k_1 * k_1 + k_2 * k_2);
     float phi_2 = asin(arg_2);
 
-
     float arg_1 = -((k_1 * normed_z) + (k_2 * normed_y)) / ((k_1 * k_1 + k_2 * k_2) * (float)cos(phi_2));
     float phi_1 = asin(arg_1);
 
+    float pwm_1 = 920 + 1200 *((phi_1 + 1.5708)/3.1416); // convert to pwm
+    float pwm_2 = 920 + 1200 *((phi_2 + 1.5708)/3.1416);
 
-
-    // debug[2] = motor_RPM_1;
-    // debug[3] = motor_RPM_2;
 
     // Calculate command RPM based on desired thrust and torque
     float thrust_constant = 2e-8; // thrust constant [N/(revol/min)^2]
@@ -415,27 +415,50 @@ static void rocketmixer(double timeSinceBoot_tS)
     des_RPMs_diff = constraind(des_RPMs_diff, -max_RPMs_diff, max_RPMs_diff);
     // debug[5] = des_RPMs_diff;
 
-    double des_RPM_1 = sqrt(des_common_RPMs + des_RPMs_diff);
-    double des_RPM_2 = sqrt(des_common_RPMs - des_RPMs_diff);
+    // double des_RPM_1 = sqrt(des_common_RPMs + des_RPMs_diff);
+    // double des_RPM_2 = sqrt(des_common_RPMs - des_RPMs_diff);
     // debug[6] = des_RPM_1;
     // debug[7] = des_RPM_2;
-    UNUSED(des_RPM_1);
-    UNUSED(des_RPM_2);
+    // UNUSED(des_RPM_1);
+    // UNUSED(des_RPM_2);
+
+    // TODO testing remove
+    double des_RPM_1 = 4500;
+    double des_RPM_2 = 2775;
 
     // Proportional RPM control
 
+    double K_p = 0.00005; // TODO probably need to tune this
+
     // Get motor speeds (use doubles for increased precision)
-    // double motor_RPM_1 = getDshotRpm(0); // this is revolutions per second, not radians per second
-    // double motor_RPM_2 = getDshotRpm(1);
+    double motor_RPM_1 = getDshotRpm(0); // this is revolutions per second, not radians per second
+    double motor_RPM_2 = getDshotRpm(1);
+
+    // Calculate error
+    double error_RPM_1 = des_RPM_1 - motor_RPM_1;
+    double error_RPM_2 = des_RPM_2 - motor_RPM_2;
 
 
+    // Calculate control signal
+    float control_correction_1 = K_p * error_RPM_1;
+    float control_correction_2 = K_p * error_RPM_2;
+
+    debug[3] = control_correction_1 * 100;
+    debug[4] = control_correction_2 * 100;
+
+    // Calculate new control signals
+    debug[1] = motor_prev[0];
+    debug[2] = motor_prev[1];
+
+    motor[0] = motor_prev[0] + control_correction_1;
+    motor[1] = motor_prev[1] + control_correction_2;
+
+    debug[5] = motor[0];
+    debug[6] = motor[1];
 
 
-
-    // pass angles to servos & motors (TODO might need to do some conversion here?)
-    float pwm_1 = 920 + 1200 *((phi_1 + 1.5708)/3.1416); // convert to pwm
-    float pwm_2 = 920 + 1200 *((phi_2 + 1.5708)/3.1416);
-
+  
+    // pass angles and speeds to servos & motors (TODO might need to do some conversion here?)
     servo[0] = 0;
     servo[1] = 0;
     servo[2] = 0;
@@ -444,16 +467,18 @@ static void rocketmixer(double timeSinceBoot_tS)
     servo[5] = pwm_2;
     servo[6] = 0;
     servo[7] = 0;
-    // TODO move to writeMotors()
-    // motor[0] = des_Tx / 5;
-    // motor[1] = des_Tx / 5;
-    motor[0] = 0;
-    motor[1] = 0;
-    // motor_disarmed[0] = 400;
-    // motor[1] = 0;
-    // debug[6] = motor_disarmed[0];
-    // debug[7] = motor_disarmed[1];
 
+    // TODO need this so the ESC starts with a zero command can maybe fix this later
+    double motorTimer_tS = 300;
+    if (timeSinceBoot_tS < motorTimer_tS) {
+        motor[0] = 0;
+        motor[1] = 0;
+        motor_prev[0] = 1.0;
+        motor_prev[1] = 1.0;
+    }
+
+    motor_prev[0] = motor[0];
+    motor_prev[1] = motor[1];
 }
 
 void writeServos(double timeSinceBoot_tS)
