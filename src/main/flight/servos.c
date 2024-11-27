@@ -337,7 +337,7 @@ static void filterServos(void);
 static void rocketmixer(double timeSinceBoot_tS)
 {
     // Need persistent bookkeeping variable for motor speeds
-    static float motor_prev[2] = {1.0f, 1.0f};
+    static float motor_prev[2] = {0.0f, 0.0f};
     
     float r_g = 0.6744; // distance from CoM to center of thrust [m] 
     
@@ -394,8 +394,8 @@ static void rocketmixer(double timeSinceBoot_tS)
     float arg_1 = -((k_1 * normed_z) + (k_2 * normed_y)) / ((k_1 * k_1 + k_2 * k_2) * (float)cos(phi_2));
     float phi_1 = asin(arg_1);
 
-    float pwm_1 = 920 + 1200 *((phi_1 + 1.5708)/3.1416); // convert to pwm
-    float pwm_2 = 920 + 1200 *((phi_2 + 1.5708)/3.1416);
+    // convert to pwm
+    float ServoPWMCommand[2] = {920 + 1200 *((phi_1 + 1.5708)/3.1416), 920 + 1200 *((phi_2 + 1.5708)/3.1416)};
 
 
     // Calculate command RPM based on desired thrust and torque
@@ -447,34 +447,34 @@ static void rocketmixer(double timeSinceBoot_tS)
     debug[4] = control_correction_2 * 100;
 
     // Calculate new control signals
-    debug[1] = motor_prev[0];
-    debug[2] = motor_prev[1];
-
-    motor[0] = motor_prev[0] + control_correction_1;
-    motor[1] = motor_prev[1] + control_correction_2;
-
-    debug[5] = motor[0];
-    debug[6] = motor[1];
-
+    float NewMotorCommand[2] = {motor_prev[0] + control_correction_1, motor_prev[1] + control_correction_2};
 
   
+    // saturate angles and speeds to servos & motors (TODO might need to do some conversion here?)
+    float minServoPWMCommand = 920;
+    float maxServoPWMCommand = 2120;
+    ServoPWMCommand[0] = constrainf(ServoPWMCommand[0], minServoPWMCommand, maxServoPWMCommand);
+    ServoPWMCommand[1] = constrainf(ServoPWMCommand[1], minServoPWMCommand, maxServoPWMCommand);
+
+    float minMotorCommand = 50;
+    float maxMotorCommand = 2000;
+    NewMotorCommand[0] = constrainf(NewMotorCommand[0], minMotorCommand, maxMotorCommand);
+    NewMotorCommand[1] = constrainf(NewMotorCommand[1], minMotorCommand, maxMotorCommand);
+
     // pass angles and speeds to servos & motors (TODO might need to do some conversion here?)
-    servo[0] = 0;
-    servo[1] = 0;
-    servo[2] = 0;
-    servo[3] = 0;
-    servo[4] = pwm_1;
-    servo[5] = pwm_2;
-    servo[6] = 0;
-    servo[7] = 0;
+    servo[4] = ServoPWMCommand[0];
+    servo[5] = ServoPWMCommand[1];
+
+    motor[0] =  NewMotorCommand[0];
+    motor[1] = NewMotorCommand[1];
 
     // TODO need this so the ESC starts with a zero command can maybe fix this later
     double motorTimer_tS = 300;
     if (timeSinceBoot_tS < motorTimer_tS) {
         motor[0] = 0;
         motor[1] = 0;
-        motor_prev[0] = 1.0;
-        motor_prev[1] = 1.0;
+        motor_prev[0] = 0.0;
+        motor_prev[1] = 0.0;
     }
 
     motor_prev[0] = motor[0];
