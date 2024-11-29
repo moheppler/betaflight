@@ -366,10 +366,10 @@ static void rocketmixer(double timeSinceBoot_tS)
     // des_Mz = constrainf(des_Mz, -max_Mz, max_Mz);
     // des_Tx = constrainf(des_Tx, min_Tx, max_Tx);
 
-    // debug[1] = des_Tx;
-    // debug[2] = des_Mx;
-    // debug[3] = des_My;
-    // debug[4] = des_Mz;
+    debug[3] = des_Tx*100;
+    debug[4] = des_Mx*100;
+    debug[5] = des_My*100;
+    debug[6] = des_Mz*100;
 
 
     // calculate desired thrust vector
@@ -387,7 +387,7 @@ static void rocketmixer(double timeSinceBoot_tS)
     float normed_y = des_thrust_vector[1] / des_thrust_vector_norm;
     float normed_z = des_thrust_vector[2] / des_thrust_vector_norm;
 
-    debug[1] = des_thrust_vector_norm * 100;
+    // debug[1] = des_thrust_vector_norm * 100;
 
     // calculate desired servo angles
     float arg_2 = (-(k_1 * normed_y) + (k_2 * normed_z)) / (k_1 * k_1 + k_2 * k_2);
@@ -405,7 +405,7 @@ static void rocketmixer(double timeSinceBoot_tS)
     float thrust_constant = 2e-8; // thrust constant [N/(revol/min)^2]
     float torque_constant = 3e-10; // torque constant [Nm/(revol/min)^2]
     double min_RPMs = 1000*1000; // minimum RPM squared for motors
-    double max_RPMs = 4800*4800; // maximum RPM squared for motors TODO increase again
+    double max_RPMs = 18000*18000; // maximum RPM squared for motors TODO tune
 
     // total RPM of the two fans to generate the desired thrust
     double des_common_RPMs = des_thrust_vector_norm / (2 * thrust_constant);
@@ -419,49 +419,49 @@ static void rocketmixer(double timeSinceBoot_tS)
     // allocation of RPMs to the two fans
     double des_RPM[2] = {sqrt(des_common_RPMs + des_RPMs_diff), sqrt(des_common_RPMs - des_RPMs_diff)};
     
-    // debug[0] = des_RPM[0];
-    // debug[1] = des_RPM[1];
-
-    // TODO testing remove
-    // double des_RPM_1 = 2000;
-    // double des_RPM_2 = 2000;
 
 
     // RPM control
 
-    // Get motor speeds (use doubles for increased precision)
-    double motor_RPM[2] = {getDshotRpm(0), getDshotRpm(1)}; // this is revolutions per second, not radians per second
-    // double motor_RPM_2 = getDshotRpm(1);
+    // Get motor RPM (use doubles for increased precision)
+    double motor_RPM[2] = {getDshotRpm(0), getDshotRpm(1)}; 
 
     // Calculate error
     double error_RPM[2] = {des_RPM[0] - motor_RPM[0], des_RPM[1] - motor_RPM[1]};
-    // double error_RPM_2 = des_RPM_2 - motor_RPM_2;
 
-    debug[0] = error_RPM[0];
-    debug[1] = error_RPM[1];
+    // debug[0] = error_RPM[0];
+    // debug[1] = error_RPM[1];
 
     // Controller gains & saturations
-    double K_p = 0.01; // 200 motor commands gives about 3500RPM, tune a bit on the low side TODO tune
-    double K_i = 0.000012; // TODO NOTE THIS IS TUNED FOR 2 kHz RATE, NEED TO CHANGE AGAIN IF RATE CHANGESTODO probably need to tune this
-    // double max_integral_term = 0.1; // saturation for integral term
+    double K_p = 0.03; // 200 motor commands gives about 3500RPM, tune a bit on the low side TODO tune
+    double K_i = 0.000018; // TODO NOTE THIS IS TUNED FOR 2 kHz RATE, NEED TO CHANGE AGAIN IF RATE CHANGESTODO probably need to tune this
+    double max_proportional_term = 90; // saturation for proportional term
+    double max_integral_term = 300; // saturation for integral term
 
     // Compute control signals
     double proportional_term[2] = {K_p * error_RPM[0], K_p * error_RPM[1]};
     integral_term[0] += K_i * error_RPM[0];
     integral_term[1] += K_i * error_RPM[1];
     
-    debug[2] = proportional_term[0];
-    debug[3] = proportional_term[1];
-    debug[4] = integral_term[0];
-    debug[5] = integral_term[1];
+    // saturation
+    proportional_term[0] = constraind(proportional_term[0], -max_proportional_term, max_proportional_term);
+    proportional_term[1] = constraind(proportional_term[1], -max_proportional_term, max_proportional_term);
+
+    integral_term[0] = constraind(integral_term[1], -max_integral_term, max_integral_term); 
+    integral_term[1] = constraind(integral_term[1], -max_integral_term, max_integral_term);
+    
+    // debug[2] = proportional_term[0];
+    // debug[3] = proportional_term[1];
+    // debug[4] = integral_term[0];
+    // debug[5] = integral_term[1];
 
     
 
 
     // Calculate motor commands
-    double zero_RPM_offset = 50; // offset as DSHOT input seems to go from 50 to 2050
+    double zero_RPM_offset = 48; // offset as DSHOT throttle input goes from 48 to 2047
     float NewMotorCommand[2] = {zero_RPM_offset + proportional_term[0] + integral_term[0], zero_RPM_offset + proportional_term[1] + integral_term[1]};
-    debug[6] = NewMotorCommand[0];
+    // debug[6] = NewMotorCommand[0];
 
     // saturate angles and speeds to servos & motors (TODO might need to do some conversion here?)
     float minServoPWMCommand = 920;
@@ -469,7 +469,7 @@ static void rocketmixer(double timeSinceBoot_tS)
     ServoPWMCommand[0] = constrainf(ServoPWMCommand[0], minServoPWMCommand, maxServoPWMCommand);
     ServoPWMCommand[1] = constrainf(ServoPWMCommand[1], minServoPWMCommand, maxServoPWMCommand);
 
-    float minMotorCommand = 50;
+    float minMotorCommand = 0;
     float maxMotorCommand = 1500; //TODO increase again when it's safe
     NewMotorCommand[0] = constrainf(NewMotorCommand[0], minMotorCommand, maxMotorCommand);
     NewMotorCommand[1] = constrainf(NewMotorCommand[1], minMotorCommand, maxMotorCommand);
@@ -482,7 +482,7 @@ static void rocketmixer(double timeSinceBoot_tS)
     motor[0] = NewMotorCommand[0];
     motor[1] = NewMotorCommand[1];
     
-    debug[6] = motor[0];
+    // debug[6] = motor[0];
 
     // TODO need this so the ESC starts with a zero command can maybe fix this later
     double motorTimer_tS = 300;
