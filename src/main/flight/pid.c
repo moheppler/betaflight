@@ -1248,11 +1248,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
         float errorRate = currentPidSetpoint - gyroRate; // r - y
         debug[axis] = errorRate;
-#if defined(USE_ACC)
-        handleCrashRecovery(
-            pidProfile->crash_recovery, angleTrim, axis, currentTimeUs, gyroRate,
-            &currentPidSetpoint, &errorRate);
-#endif
+// #if defined(USE_ACC)
+//         handleCrashRecovery(
+//             pidProfile->crash_recovery, angleTrim, axis, currentTimeUs, gyroRate,
+//             &currentPidSetpoint, &errorRate);
+// #endif
+        UNUSED(handleCrashRecovery);
 
         const float previousIterm = pidData[axis].I;
         float itermErrorRate = errorRate;
@@ -1342,11 +1343,12 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
             const float delta = - (gyroRateDterm[axis] - previousGyroRateDterm[axis]) * pidRuntime.pidFrequency;
             float preTpaD = pidRuntime.pidCoefficient[axis].Kd * delta;
 
-#if defined(USE_ACC)
-            if (cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US) {
-                detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
-            }
-#endif
+// #if defined(USE_ACC)
+//             if (cmpTimeUs(currentTimeUs, levelModeStartTimeUs) > CRASH_RECOVERY_DETECTION_DELAY_US) {
+//                 detectAndSetCrashRecovery(pidProfile->crash_recovery, axis, currentTimeUs, delta, errorRate);
+//             }
+// #endif
+UNUSED(detectAndSetCrashRecovery);
 
 #ifdef USE_D_MAX
             float dMaxMultiplier = 1.0f;
@@ -1412,24 +1414,24 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
 #endif // USE_YAW_SPIN_RECOVERY
 
-#ifdef USE_LAUNCH_CONTROL
-        // Disable P/I appropriately based on the launch control mode
-        if (launchControlActive) {
-            // if not using FULL mode then disable I accumulation on yaw as
-            // yaw has a tendency to windup. Otherwise limit yaw iterm accumulation.
-            const int launchControlYawItermLimit = (pidRuntime.launchControlMode == LAUNCH_CONTROL_MODE_FULL) ? LAUNCH_CONTROL_YAW_ITERM_LIMIT : 0;
-            pidData[FD_YAW].I = constrainf(pidData[FD_YAW].I, -launchControlYawItermLimit, launchControlYawItermLimit);
+// #ifdef USE_LAUNCH_CONTROL
+//         // Disable P/I appropriately based on the launch control mode
+//         if (launchControlActive) {
+//             // if not using FULL mode then disable I accumulation on yaw as
+//             // yaw has a tendency to windup. Otherwise limit yaw iterm accumulation.
+//             const int launchControlYawItermLimit = (pidRuntime.launchControlMode == LAUNCH_CONTROL_MODE_FULL) ? LAUNCH_CONTROL_YAW_ITERM_LIMIT : 0;
+//             pidData[FD_YAW].I = constrainf(pidData[FD_YAW].I, -launchControlYawItermLimit, launchControlYawItermLimit);
 
-            // for pitch-only mode we disable everything except pitch P/I
-            if (pidRuntime.launchControlMode == LAUNCH_CONTROL_MODE_PITCHONLY) {
-                pidData[FD_ROLL].P = 0;
-                pidData[FD_ROLL].I = 0;
-                pidData[FD_YAW].P = 0;
-                // don't let I go negative (pitch backwards) as front motors are limited in the mixer
-                pidData[FD_PITCH].I = MAX(0.0f, pidData[FD_PITCH].I);
-            }
-        }
-#endif
+//             // for pitch-only mode we disable everything except pitch P/I
+//             if (pidRuntime.launchControlMode == LAUNCH_CONTROL_MODE_PITCHONLY) {
+//                 pidData[FD_ROLL].P = 0;
+//                 pidData[FD_ROLL].I = 0;
+//                 pidData[FD_YAW].P = 0;
+//                 // don't let I go negative (pitch backwards) as front motors are limited in the mixer
+//                 pidData[FD_PITCH].I = MAX(0.0f, pidData[FD_PITCH].I);
+//             }
+//         }
+// #endif
 
         // Add P boost from antiGravity when sticks are close to zero
         if (axis != FD_YAW) {
