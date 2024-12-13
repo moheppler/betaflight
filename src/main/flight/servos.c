@@ -366,10 +366,10 @@ static void rocketmixer(double timeSinceBoot_tS)
     // des_Mz = constrainf(des_Mz, -max_Mz, max_Mz);
     // des_Tx = constrainf(des_Tx, min_Tx, max_Tx);
 
-    debug[3] = des_Tx*100;
-    debug[4] = des_Mx*100;
-    debug[5] = des_My*100;
-    debug[6] = des_Mz*100;
+    // debug[3] = des_Tx*100;
+    // debug[4] = des_Mx*100;
+    // debug[5] = des_My*100;
+    // debug[6] = des_Mz*100;
 
 
     // calculate desired thrust vector

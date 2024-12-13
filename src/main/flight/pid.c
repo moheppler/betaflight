@@ -1183,6 +1183,10 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         disarmOnImpact();
     }
 
+    // TODO attitude setpoints
+    // float attitude_setpoints[3] = {0.0f, 0.0f, 0.0f};
+
+
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
 
@@ -1244,10 +1248,16 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
 #endif // USE_YAW_SPIN_RECOVERY
 
+        // TODO Custom attitude controller
+        // float k_att_p = 1.0f;
+        // currentPidSetpoint = k_att_p * (attitude_setpoints[axis] - rpy;
+
         // -----calculate error rate
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
         float errorRate = currentPidSetpoint - gyroRate; // r - y
-        debug[axis] = errorRate;
+        // debug[axis] = errorRate;
+
+
 // #if defined(USE_ACC)
 //         handleCrashRecovery(
 //             pidProfile->crash_recovery, angleTrim, axis, currentTimeUs, gyroRate,
