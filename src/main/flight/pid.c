@@ -1209,7 +1209,7 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
 
     // compute command angular velocity
     
-    float k_att_p = 100.0f;
+    float k_att_p = 200.0f;
     float command_velocity[3] = {curr_attitude_inv.x, curr_attitude_inv.y, curr_attitude_inv.z};
     for (int i = 0; i < 3; i++) {
         command_velocity[i] = k_att_p * SIGN(attitude_error.w) * command_velocity[i];

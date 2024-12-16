@@ -353,10 +353,10 @@ static void rocketmixer(double timeSinceBoot_tS)
     // float min_Tx = 0.05; // need this because inverse kinematics breaks when Tx <= 0
     
     // get command torques & thrust
-    float des_Mx = pidData[FD_ROLL].Sum/3500; // TODO check axes, remove scaling
-    float des_My = pidData[FD_PITCH].Sum/500;
-    float des_Mz = pidData[FD_YAW].Sum/500;
-    float des_Tx = 0.5; // TODO get from MSP
+    float des_Mx = pidData[FD_YAW].Sum/3500; // TODO check axes, remove scaling
+    float des_My = -pidData[FD_PITCH].Sum/500;
+    float des_Mz = -pidData[FD_ROLL].Sum/500;
+    float des_Tx = 9.5; // TODO get from MSP
     // float des_Tx = 1000 + 1500 * sin(timeSinceBoot_tS/10); // need to figure out how to get this
 
     
