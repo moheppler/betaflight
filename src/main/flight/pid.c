@@ -1184,7 +1184,39 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     }
 
     // TODO attitude setpoints
-    // float attitude_setpoints[3] = {0.0f, 0.0f, 0.0f};
+    quaternion attitude_setpoint = QUATERNION_INITIALIZE;
+
+    // initialize quaternions
+    static quaternion attitude_error = QUATERNION_INITIALIZE;
+    quaternion curr_attitude_inv = QUATERNION_INITIALIZE;
+    getQuaternion(&curr_attitude_inv);
+
+    // Conjugate and normalise attitude quaternion
+    float recipNorm = 1 / (sqrt((sq(curr_attitude_inv.w) + sq(curr_attitude_inv.x) + sq(curr_attitude_inv.y) + sq(curr_attitude_inv.z))));
+    curr_attitude_inv.x = -curr_attitude_inv.x;
+    curr_attitude_inv.y = -curr_attitude_inv.y;
+    curr_attitude_inv.z = -curr_attitude_inv.z;
+    curr_attitude_inv.w *= recipNorm;
+    curr_attitude_inv.x *= recipNorm;
+    curr_attitude_inv.y *= recipNorm;
+    curr_attitude_inv.z *= recipNorm; 
+
+    // compute error quaternion 
+    attitude_error.w = curr_attitude_inv.w * attitude_setpoint.w - curr_attitude_inv.x * attitude_setpoint.x - curr_attitude_inv.y * attitude_setpoint.y - curr_attitude_inv.z * attitude_setpoint.z;
+    attitude_error.x = curr_attitude_inv.w * attitude_setpoint.x + curr_attitude_inv.x * attitude_setpoint.w + curr_attitude_inv.y * attitude_setpoint.z - curr_attitude_inv.z * attitude_setpoint.y;
+    attitude_error.y = curr_attitude_inv.w * attitude_setpoint.y - curr_attitude_inv.x * attitude_setpoint.z + curr_attitude_inv.y * attitude_setpoint.w + curr_attitude_inv.z * attitude_setpoint.x;
+    attitude_error.z = curr_attitude_inv.w * attitude_setpoint.z + curr_attitude_inv.x * attitude_setpoint.y - curr_attitude_inv.y * attitude_setpoint.x + curr_attitude_inv.z * attitude_setpoint.w;
+
+    // compute command angular velocity
+    
+    float k_att_p = 100.0f;
+    float command_velocity[3] = {curr_attitude_inv.x, curr_attitude_inv.y, curr_attitude_inv.z};
+    for (int i = 0; i < 3; i++) {
+        command_velocity[i] = k_att_p * SIGN(attitude_error.w) * command_velocity[i];
+    }
+    // debug[4] = command_velocity[0] * 100;
+    // debug[5] = command_velocity[1] * 100;
+    // debug[6] = command_velocity[2] * 100;
 
 
     // ----------PID controller----------
@@ -1248,14 +1280,14 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
 #endif // USE_YAW_SPIN_RECOVERY
 
-        // TODO Custom attitude controller
-        // float k_att_p = 1.0f;
-        // currentPidSetpoint = k_att_p * (attitude_setpoints[axis] - rpy;
+
+        // TODO Extract command angular velocity        
+        currentPidSetpoint = command_velocity[axis];
 
         // -----calculate error rate
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
         float errorRate = currentPidSetpoint - gyroRate; // r - y
-        // debug[axis] = errorRate;
+        debug[axis + 4] = errorRate;
 
 
 // #if defined(USE_ACC)
