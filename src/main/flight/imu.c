@@ -101,7 +101,7 @@ STATIC_UNIT_TESTED bool attitudeIsEstablished = false;
 #endif // USE_ACC
 
 // quaternion of sensor frame relative to earth frame
-STATIC_UNIT_TESTED quaternion q = QUATERNION_INITIALIZE;
+quaternion q = QUATERNION_INITIALIZE;
 STATIC_UNIT_TESTED quaternionProducts qP = QUATERNION_PRODUCTS_INITIALIZE;
 // headfree quaternions
 quaternion headfree = QUATERNION_INITIALIZE;
@@ -382,11 +382,14 @@ static float imuCalcKpGain(timeUs_t currentTimeUs, bool useAcc, float *gyroAvera
             if (cmpTimeUs(currentTimeUs, stateTimeout) >= 0) {
                 arState = stDisarmed;
             }
+            // TODO add back in if necessary
             // high gain, 100x greater than normal, or 25, after quiet period
-            return imuRuntimeConfig.imuDcmKp * 100.0f;
+            // return imuRuntimeConfig.imuDcmKp * 100.0f;
+            return imuRuntimeConfig.imuDcmKp;
         case stDisarmed:
             // Scale the kP to converge 10x faster when disarmed, ie 2.5
-            return imuRuntimeConfig.imuDcmKp * 10.0f;
+            // return imuRuntimeConfig.imuDcmKp * 10.0f;
+            return imuRuntimeConfig.imuDcmKp;
         }
     } else {
         arState = stArmed;
