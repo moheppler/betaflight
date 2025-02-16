@@ -346,30 +346,29 @@ static void rocketmixer(double timeSinceBoot_tS)
     float k_2 = 0.17364817766;
 
     // define torque and thrust saturations
-    // float max_Mx = 10000; 
-    // float max_My = 10000;
-    // float max_Mz = 10000;
-    // float max_Tx = 10000;
-    // float min_Tx = 0.05; // need this because inverse kinematics breaks when Tx <= 0
+    float max_Mx = 10000; 
+    float max_My = 10000;
+    float max_Mz = 10000;
+    float max_Tx = 15;
+    float min_Tx = 0.05; // need this because inverse kinematics breaks when Tx <= 0
     
     // get command torques & thrust
-    float des_Mx = pidData[FD_YAW].Sum/3500; // TODO check axes, remove scaling
+    float des_Mx = pidData[FD_YAW].Sum/750; // TODO check axes, remove scaling
     float des_My = -pidData[FD_PITCH].Sum/500;
-    float des_Mz = -pidData[FD_ROLL].Sum/500;
-    float des_Tx = 9.5; // TODO get from MSP
-    // float des_Tx = 1000 + 1500 * sin(timeSinceBoot_tS/10); // need to figure out how to get this
+    float des_Mz = pidData[FD_ROLL].Sum/500;
+    float des_Tx = (rcData[3] - 990) / 70; // map to [0.14, 14.43] N
 
     
     // saturate torques & thrust TODO reactivate again
-    // des_Mx = constrainf(des_Mx, -max_Mx, max_Mx);
-    // des_My = constrainf(des_My, -max_My, max_My);
-    // des_Mz = constrainf(des_Mz, -max_Mz, max_Mz);
-    // des_Tx = constrainf(des_Tx, min_Tx, max_Tx);
+    des_Mx = constrainf(des_Mx, -max_Mx, max_Mx);
+    des_My = constrainf(des_My, -max_My, max_My);
+    des_Mz = constrainf(des_Mz, -max_Mz, max_Mz);
+    des_Tx = constrainf(des_Tx, min_Tx, max_Tx);
 
-    // debug[3] = des_Tx*100;
-    // debug[4] = des_Mx*100;
-    // debug[5] = des_My*100;
-    // debug[6] = des_Mz*100;
+    // debug[0] = des_Tx*100;
+    // debug[1] = des_Mx*100;
+    // debug[2] = des_My*100;
+    // debug[3] = des_Mz*100;
 
 
     // calculate desired thrust vector
@@ -387,7 +386,6 @@ static void rocketmixer(double timeSinceBoot_tS)
     float normed_y = des_thrust_vector[1] / des_thrust_vector_norm;
     float normed_z = des_thrust_vector[2] / des_thrust_vector_norm;
 
-    // debug[1] = des_thrust_vector_norm * 100;
 
     // calculate desired servo angles
     float arg_2 = (-(k_1 * normed_y) + (k_2 * normed_z)) / (k_1 * k_1 + k_2 * k_2);
@@ -474,18 +472,34 @@ static void rocketmixer(double timeSinceBoot_tS)
     NewMotorCommand[0] = constrainf(NewMotorCommand[0], minMotorCommand, maxMotorCommand);
     NewMotorCommand[1] = constrainf(NewMotorCommand[1], minMotorCommand, maxMotorCommand);
 
+    // shutdown motors if throttle is 0-10
+    if (rcData[3] < 1010) {
+        NewMotorCommand[0] = 0;
+        NewMotorCommand[1] = 0;
+        integral_term[0] = 0.0;
+        integral_term[1] = 0.0;
+    }
+
 
     // pass angles and speeds to servos & motors (TODO might need to do some conversion here?)
-    servo[4] = ServoPWMCommand[0];
-    servo[5] = ServoPWMCommand[1];
+    servo[2] = ServoPWMCommand[0]; // note: servo IDs found by trial and error: 2 on the board is 3 in the betaflight configurator, 1 on th board is 4 in the configurator
+    servo[3] = ServoPWMCommand[1];
+
+    debug[2] = servo[2];
+    debug[3] = servo[3];
+    
 
     motor[0] = NewMotorCommand[0];
     motor[1] = NewMotorCommand[1];
     
+    debug[0] = motor[0];
+    debug[1] = motor[1];
+
+
     // debug[6] = motor[0];
 
     // TODO need this so the ESC starts with a zero command can maybe fix this later
-    double motorTimer_tS = 300;
+    double motorTimer_tS = 200;
     if (timeSinceBoot_tS < motorTimer_tS) {
         motor[0] = 0;
         motor[1] = 0;

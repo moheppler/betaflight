@@ -294,10 +294,10 @@ STATIC_UNIT_TESTED void imuMahonyAHRSupdate(float dt,
     q.z *= recipNorm;
 
     // TODO REMOVE DEBUG
-    debug[0] = q.w * 100;
-    debug[1] = q.x * 100;
-    debug[2] = q.y * 100;
-    debug[3] = q.z * 100;
+    // debug[0] = q.w * 100;
+    // debug[1] = q.x * 100;
+    // debug[2] = q.y * 100;
+    // debug[3] = q.z * 100;
 
     // Pre-compute rotation matrix from quaternion
     imuComputeRotationMatrix();

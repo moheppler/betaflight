@@ -64,6 +64,9 @@
 
 #include "pid.h"
 
+// TODO remove
+#include "rx/rx.h"
+
 typedef enum {
     LEVEL_MODE_OFF = 0,
     LEVEL_MODE_R,
@@ -1218,11 +1221,20 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
     // debug[5] = command_velocity[1] * 100;
     // debug[6] = command_velocity[2] * 100;
 
+    // debug[0] = rcData[0];
+    // debug[1] = rcData[1];
+    // debug[2] = rcData[2];
+    // debug[3] = rcData[3];
 
     // ----------PID controller----------
     for (int axis = FD_ROLL; axis <= FD_YAW; ++axis) {
 
-        float currentPidSetpoint = getSetpointRate(axis);
+        // TODO Extract command angular velocity      
+        float command_angular_velocity = rcData[axis] - 1500; // cast int in [1000, 2000] to float in [-500, 500]
+        float currentPidSetpoint = command_angular_velocity;
+
+        // float currentPidSetpoint = getSetpointRate(axis);
+
         if (pidRuntime.maxVelocity[axis]) {
             currentPidSetpoint = accelerationLimit(axis, currentPidSetpoint);
         }
@@ -1280,14 +1292,11 @@ void FAST_CODE pidController(const pidProfile_t *pidProfile, timeUs_t currentTim
         }
 #endif // USE_YAW_SPIN_RECOVERY
 
-
-        // TODO Extract command angular velocity        
-        currentPidSetpoint = command_velocity[axis];
-
         // -----calculate error rate
         const float gyroRate = gyro.gyroADCf[axis]; // Process variable from gyro output in deg/sec
         float errorRate = currentPidSetpoint - gyroRate; // r - y
-        debug[axis + 4] = errorRate;
+
+        // debug[axis] = errorRate;
 
 
 // #if defined(USE_ACC)

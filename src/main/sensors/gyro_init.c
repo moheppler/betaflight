@@ -732,7 +732,10 @@ const mpuDetectionResult_t *gyroMpuDetectionResult(void)
 
 int16_t gyroRateDps(int axis)
 {
-    return lrintf(gyro.gyroADCf[axis] / ACTIVE_GYRO->gyroDev.scale);
+    // TODO check this
+    return lrintf(gyro.gyroADCf[axis] / (8000.0f / (1 << 15)));
+    // gyro.gyroADCf[axis] is already in DPS, i.e. we don't need to divide by scale
+    // return lrintf(gyro.gyroADCf[axis] / ACTIVE_GYRO->gyroDev.scale);
 }
 
 #ifdef USE_GYRO_REGISTER_DUMP
