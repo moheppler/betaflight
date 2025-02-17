@@ -350,13 +350,16 @@ static void rocketmixer(double timeSinceBoot_tS)
     float max_My = 10000;
     float max_Mz = 10000;
     float max_Tx = 15;
-    float min_Tx = 0.05; // need this because inverse kinematics breaks when Tx <= 0
+    float min_Tx = 1.3; // need this because inverse kinematics breaks when Tx <= 0
     
     // get command torques & thrust
-    float des_Mx = pidData[FD_YAW].Sum/750; // TODO check axes, remove scaling
-    float des_My = -pidData[FD_PITCH].Sum/500;
-    float des_Mz = pidData[FD_ROLL].Sum/500;
-    float des_Tx = (rcData[3] - 990) / 70; // map to [0.14, 14.43] N
+    float des_Mx = pidData[FD_YAW].Sum/2000; // TODO check axes, remove scaling
+    float des_My = -pidData[FD_PITCH].Sum/100;
+    float des_Mz = pidData[FD_ROLL].Sum/100;
+    float des_Tx = (rcData[3] - 900) / 70; // map to [1.42, 14.43] N
+
+    debug[2] = des_Tx*100;
+
 
     
     // saturate torques & thrust TODO reactivate again
@@ -417,8 +420,8 @@ static void rocketmixer(double timeSinceBoot_tS)
     // allocation of RPMs to the two fans
     double des_RPM[2] = {sqrt(des_common_RPMs + des_RPMs_diff), sqrt(des_common_RPMs - des_RPMs_diff)};
     
-
-
+    debug[2] = des_RPM[0];
+    debug[3] = des_RPM[1];
     // RPM control
 
     // Get motor RPM (use doubles for increased precision)
@@ -428,7 +431,6 @@ static void rocketmixer(double timeSinceBoot_tS)
     double error_RPM[2] = {des_RPM[0] - motor_RPM[0], des_RPM[1] - motor_RPM[1]};
 
     // debug[0] = error_RPM[0];
-    // debug[1] = error_RPM[1];
 
     // Controller gains & saturations
     double K_p = 0.03; // 200 motor commands gives about 3500RPM, tune a bit on the low side TODO tune
@@ -473,7 +475,7 @@ static void rocketmixer(double timeSinceBoot_tS)
     NewMotorCommand[1] = constrainf(NewMotorCommand[1], minMotorCommand, maxMotorCommand);
 
     // shutdown motors if throttle is 0-10
-    if (rcData[3] < 1010) {
+    if (rcData[3] < 1100) {
         NewMotorCommand[0] = 0;
         NewMotorCommand[1] = 0;
         integral_term[0] = 0.0;
@@ -485,8 +487,8 @@ static void rocketmixer(double timeSinceBoot_tS)
     servo[2] = ServoPWMCommand[0]; // note: servo IDs found by trial and error: 2 on the board is 3 in the betaflight configurator, 1 on th board is 4 in the configurator
     servo[3] = ServoPWMCommand[1];
 
-    debug[2] = servo[2];
-    debug[3] = servo[3];
+    // debug[2] = servo[2];
+    // debug[3] = servo[3];
     
 
     motor[0] = NewMotorCommand[0];
@@ -495,8 +497,6 @@ static void rocketmixer(double timeSinceBoot_tS)
     debug[0] = motor[0];
     debug[1] = motor[1];
 
-
-    // debug[6] = motor[0];
 
     // TODO need this so the ESC starts with a zero command can maybe fix this later
     double motorTimer_tS = 200;
