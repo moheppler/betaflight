@@ -349,16 +349,19 @@ static void rocketmixer(double timeSinceBoot_tS)
     float max_Mx = 10000; 
     float max_My = 10000;
     float max_Mz = 10000;
-    float max_Tx = 15;
-    float min_Tx = 1.3; // need this because inverse kinematics breaks when Tx <= 0
+    float max_Tx = 30;
+    float min_Tx = 10; // need this because inverse kinematics breaks when Tx <= 0
     
     // get command torques & thrust
-    float des_Mx = pidData[FD_YAW].Sum/2000; // TODO check axes, remove scaling
-    float des_My = -pidData[FD_PITCH].Sum/100;
-    float des_Mz = pidData[FD_ROLL].Sum/100;
-    float des_Tx = (rcData[3] - 900) / 70; // map to [1.42, 14.43] N
+    float des_Mx = pidData[FD_YAW].Sum/10000; // TODO check axes, remove scaling
+    float des_My = -pidData[FD_PITCH].Sum/20;
+    float des_Mz = pidData[FD_ROLL].Sum/20;
+    float des_Tx = (rcData[3] - 1000) / 50.0; // map to [0, 20] N
 
-    debug[2] = des_Tx*100;
+
+    // debug[0] = des_My * 40;
+    // debug[1] = des_Mz * 40;
+    // debug[3] = des_Mx*1000000;
 
 
     
@@ -398,15 +401,17 @@ static void rocketmixer(double timeSinceBoot_tS)
     float phi_1 = asin(arg_1);
 
 
-    // convert to pwm
-    float ServoPWMCommand[2] = {920 + 1200 *((phi_1 + 1.5708)/3.1416), 920 + 1200 *((phi_2 + 1.5708)/3.1416)};
+    // get midpoint offset from aux channels and convert to pwm TODO
+    float midpoint_offset[2] = {(rcData[4] - 1250) / 5, (rcData[5] - 1586) / 5}; // the subtracted values have been tuned to give 0 when aux channels are at 1500, needs to be redone when servo setup is changed
+    float ServoPWMCommand[2] = {920 + midpoint_offset[0] + 1200 *((phi_1 + 1.5708)/3.1416), 920 + midpoint_offset[1] + 1200 *((phi_2 + 1.5708)/3.1416)};
+    // float ServoPWMCommand[2] = {920 + 1200 *((phi_1 + 1.5708)/3.1416), 920 + 1200 *((phi_2 + 1.5708)/3.1416)};
 
 
     // Calculate command RPM based on desired thrust and torque TODO tune these
     float thrust_constant = 2e-8; // thrust constant [N/(revol/min)^2]
     float torque_constant = 3e-10; // torque constant [Nm/(revol/min)^2]
     double min_RPMs = 1000*1000; // minimum RPM squared for motors
-    double max_RPMs = 18000*18000; // maximum RPM squared for motors TODO tune
+    double max_RPMs = 25000*25000; // maximum RPM squared for motors TODO tune
 
     // total RPM of the two fans to generate the desired thrust
     double des_common_RPMs = des_thrust_vector_norm / (2 * thrust_constant);
@@ -418,25 +423,31 @@ static void rocketmixer(double timeSinceBoot_tS)
     des_RPMs_diff = constraind(des_RPMs_diff, -max_RPMs_diff, max_RPMs_diff); // saturation
 
     // allocation of RPMs to the two fans
-    double des_RPM[2] = {sqrt(des_common_RPMs + des_RPMs_diff), sqrt(des_common_RPMs - des_RPMs_diff)};
+    double des_RPM[2] = {sqrt(des_common_RPMs) + sqrt(des_RPMs_diff), sqrt(des_common_RPMs) - sqrt(des_RPMs_diff)};
     
-    debug[2] = des_RPM[0];
-    debug[3] = des_RPM[1];
+    // debug[2] = des_RPM[0];
+    // debug[3] = des_RPM[1];
     // RPM control
 
     // Get motor RPM (use doubles for increased precision)
     double motor_RPM[2] = {getDshotRpm(0), getDshotRpm(1)}; 
+    debug[0] = motor_RPM[0];
+    // debug[1] = motor_RPM[1];
+    // debug[2] = (des_RPMs_diff/sqrt(des_RPMs_diff*des_RPMs_diff)) * sqrt(des_RPMs_diff);
+    // debug[3] = des_RPM[0];
 
     // Calculate error
     double error_RPM[2] = {des_RPM[0] - motor_RPM[0], des_RPM[1] - motor_RPM[1]};
+    debug[1] = des_RPM[0];
+    // debug[1] = des_RPM[1];
 
-    // debug[0] = error_RPM[0];
+    // debug[1] = error_RPM[0];
 
     // Controller gains & saturations
-    double K_p = 0.03; // 200 motor commands gives about 3500RPM, tune a bit on the low side TODO tune
-    double K_i = 0.000018; // TODO NOTE THIS IS TUNED FOR 2 kHz RATE, NEED TO CHANGE AGAIN IF RATE CHANGESTODO probably need to tune this
-    double max_proportional_term = 90; // saturation for proportional term
-    double max_integral_term = 300; // saturation for integral term
+    double K_p = 0.12; // TODO tune
+    double K_i = 0.00005; // TODO NOTE THIS IS TUNED FOR 2 kHz RATE, NEED TO CHANGE AGAIN IF RATE CHANGESTODO probably need to tune this
+    double max_proportional_term = 5000; // saturation for proportional term
+    double max_integral_term = 1000; // saturation for integral term VERY HIGH RIGHT NOW NEED TO TUNE K_P BETTER TO ALLEVIATE
 
     // Compute control signals
     double proportional_term[2] = {K_p * error_RPM[0], K_p * error_RPM[1]};
@@ -447,9 +458,9 @@ static void rocketmixer(double timeSinceBoot_tS)
     proportional_term[0] = constraind(proportional_term[0], -max_proportional_term, max_proportional_term);
     proportional_term[1] = constraind(proportional_term[1], -max_proportional_term, max_proportional_term);
 
-    integral_term[0] = constraind(integral_term[1], -max_integral_term, max_integral_term); 
+    // debug[2] = integral_term[0];
+    integral_term[0] = constraind(integral_term[0], -max_integral_term, max_integral_term); 
     integral_term[1] = constraind(integral_term[1], -max_integral_term, max_integral_term);
-    
     // debug[2] = proportional_term[0];
     // debug[3] = proportional_term[1];
     // debug[4] = integral_term[0];
@@ -470,17 +481,19 @@ static void rocketmixer(double timeSinceBoot_tS)
     ServoPWMCommand[1] = constrainf(ServoPWMCommand[1], minServoPWMCommand, maxServoPWMCommand);
 
     float minMotorCommand = 0;
-    float maxMotorCommand = 1500; //TODO increase again when it's safe
+    float maxMotorCommand = 2047; //TODO increase again when it's safe
     NewMotorCommand[0] = constrainf(NewMotorCommand[0], minMotorCommand, maxMotorCommand);
     NewMotorCommand[1] = constrainf(NewMotorCommand[1], minMotorCommand, maxMotorCommand);
 
-    // shutdown motors if throttle is 0-10
+    // shutdown motors if throttle is 0-100
     if (rcData[3] < 1100) {
         NewMotorCommand[0] = 0;
         NewMotorCommand[1] = 0;
         integral_term[0] = 0.0;
         integral_term[1] = 0.0;
     }
+    debug[2] = integral_term[0];
+
 
 
     // pass angles and speeds to servos & motors (TODO might need to do some conversion here?)
@@ -494,8 +507,8 @@ static void rocketmixer(double timeSinceBoot_tS)
     motor[0] = NewMotorCommand[0];
     motor[1] = NewMotorCommand[1];
     
-    debug[0] = motor[0];
-    debug[1] = motor[1];
+    debug[3] = motor[0];
+    // debug[1] = motor[1];
 
 
     // TODO need this so the ESC starts with a zero command can maybe fix this later

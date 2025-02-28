@@ -148,14 +148,19 @@
     TIMER_PIN_MAP( 9, PE11 , 1,  7) \
     TIMER_PIN_MAP( 10, PE13 , 1, -1) \
     TIMER_PIN_MAP( 11, PE14 , 1, -1) \
-    TIMER_PIN_MAP( 11, PC6 , 2, 8)
+    TIMER_PIN_MAP( 11, PC6 , 1, 8)
 
 
 #define ADC1_DMA_OPT        12 // DMA2 Stream 4
-//#define TIMUP1_DMA_OPT      0
-//#define TIMUP3_DMA_OPT      0
-//#define TIMUP4_DMA_OPT      0
-//#define TIMUP5_DMA_OPT      0
+#define SPI1_RX_DMA_OPT    13 // DMA2 Stream 5
+#define SPI1_TX_DMA_OPT    14 // DMA2 Stream 6
+#define SPI4_RX_DMA_OPT    15 // DMA2 Stream 7
+#define SPI4_TX_DMA_OPT    6  // DMA1 Stream 5
+
+// #define TIMUP1_DMA_OPT      0
+// #define TIMUP3_DMA_OPT      0
+// #define TIMUP4_DMA_OPT      0
+// #define TIMUP5_DMA_OPT      0
 
 
 #define PINIO1_BOX 40   // BOX: BOXUSER1 MODE:USER1 
@@ -167,5 +172,5 @@
 #define DEFAULT_DSHOT_BURST             DSHOT_DMAR_AUTO
 #define DEFAULT_DSHOT_BITBANG           DSHOT_BITBANG_ON        // need to be ON so we can get back RPM data from the ESC
 #define DEFAULT_DSHOT_TELEMETRY         DSHOT_TELEMETRY_ON
-
+#define USE_DSHOT
 #define DEFAULT_VOLTAGE_METER_SOURCE    VOLTAGE_METER_ADC
