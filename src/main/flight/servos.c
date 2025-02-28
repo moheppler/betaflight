@@ -444,21 +444,26 @@ static void rocketmixer(double timeSinceBoot_tS)
     // debug[1] = error_RPM[0];
 
     // Controller gains & saturations
+    double K_ff = 0.07; // feedforward gain
     double K_p = 0.12; // TODO tune
     double K_i = 0.00005; // TODO NOTE THIS IS TUNED FOR 2 kHz RATE, NEED TO CHANGE AGAIN IF RATE CHANGESTODO probably need to tune this
-    double max_proportional_term = 5000; // saturation for proportional term
-    double max_integral_term = 1000; // saturation for integral term VERY HIGH RIGHT NOW NEED TO TUNE K_P BETTER TO ALLEVIATE
+    double max_feedforward_term = 2000; // saturation for feedforward term
+    double max_proportional_term = 500; // saturation for proportional term
+    double max_integral_term = 800; // saturation for integral term VERY HIGH RIGHT NOW NEED TO TUNE K_P BETTER TO ALLEVIATE
 
     // Compute control signals
+    double feedforward_term[2] = {K_ff * des_RPM[0], K_ff * des_RPM[1]};
     double proportional_term[2] = {K_p * error_RPM[0], K_p * error_RPM[1]};
     integral_term[0] += K_i * error_RPM[0];
     integral_term[1] += K_i * error_RPM[1];
     
     // saturation
+    feedforward_term[0] = constraind(feedforward_term[0], 0, max_feedforward_term);
+    feedforward_term[1] = constraind(feedforward_term[1], 0, max_feedforward_term);
+
     proportional_term[0] = constraind(proportional_term[0], -max_proportional_term, max_proportional_term);
     proportional_term[1] = constraind(proportional_term[1], -max_proportional_term, max_proportional_term);
 
-    // debug[2] = integral_term[0];
     integral_term[0] = constraind(integral_term[0], -max_integral_term, max_integral_term); 
     integral_term[1] = constraind(integral_term[1], -max_integral_term, max_integral_term);
     // debug[2] = proportional_term[0];
@@ -471,7 +476,7 @@ static void rocketmixer(double timeSinceBoot_tS)
 
     // Calculate motor commands
     double zero_RPM_offset = 48; // offset as DSHOT throttle input goes from 48 to 2047
-    float NewMotorCommand[2] = {zero_RPM_offset + proportional_term[0] + integral_term[0], zero_RPM_offset + proportional_term[1] + integral_term[1]};
+    float NewMotorCommand[2] = {zero_RPM_offset + feedforward_term[0] + proportional_term[0] + integral_term[0], zero_RPM_offset + feedforward_term[1] + proportional_term[1] + integral_term[1]};
     // debug[6] = NewMotorCommand[0];
 
     // saturate angles and speeds to servos & motors (TODO might need to do some conversion here?)
@@ -512,7 +517,7 @@ static void rocketmixer(double timeSinceBoot_tS)
 
 
     // TODO need this so the ESC starts with a zero command can maybe fix this later
-    double motorTimer_tS = 200;
+    double motorTimer_tS = 0;
     if (timeSinceBoot_tS < motorTimer_tS) {
         motor[0] = 0;
         motor[1] = 0;
