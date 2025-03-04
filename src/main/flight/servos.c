@@ -422,9 +422,20 @@ static void rocketmixer(double timeSinceBoot_tS)
     double max_RPMs_diff = mind(des_common_RPMs, max_RPMs - des_common_RPMs); // maximum RPMs difference between motors
     des_RPMs_diff = constraind(des_RPMs_diff, -max_RPMs_diff, max_RPMs_diff); // saturation
 
-    // allocation of RPMs to the two fans
-    double des_RPM[2] = {sqrt(des_common_RPMs) + sqrt(des_RPMs_diff), sqrt(des_common_RPMs) - sqrt(des_RPMs_diff)};
+    // allocation of RPMs to the two fans (need case distinction as sqrt(x) always returns sqrt(abs(x)), even if x is negative)
+    double des_RPM[2];
+    if (des_RPMs_diff > 0.0)    {
+        des_RPM[0] = sqrt(des_common_RPMs) + sqrt(des_RPMs_diff);
+        des_RPM[1] = sqrt(des_common_RPMs) - sqrt(des_RPMs_diff);
+    }
+    else {
+        des_RPM[0] = sqrt(des_common_RPMs) - sqrt(-des_RPMs_diff);
+        des_RPM[1] = sqrt(des_common_RPMs) + sqrt(-des_RPMs_diff);
+    }
+
     
+    debug[2] = sqrt(des_RPMs_diff);
+    debug[1] = des_RPM[0];
     // debug[2] = des_RPM[0];
     // debug[3] = des_RPM[1];
     // RPM control
@@ -438,7 +449,6 @@ static void rocketmixer(double timeSinceBoot_tS)
 
     // Calculate error
     double error_RPM[2] = {des_RPM[0] - motor_RPM[0], des_RPM[1] - motor_RPM[1]};
-    debug[1] = des_RPM[0];
     // debug[1] = des_RPM[1];
 
     // debug[1] = error_RPM[0];
@@ -450,6 +460,12 @@ static void rocketmixer(double timeSinceBoot_tS)
     double max_feedforward_term = 2000; // saturation for feedforward term
     double max_proportional_term = 500; // saturation for proportional term
     double max_integral_term = 800; // saturation for integral term VERY HIGH RIGHT NOW NEED TO TUNE K_P BETTER TO ALLEVIATE
+
+    // TUNING
+    K_p = 0.0;
+    K_i = 0.0;
+
+
 
     // Compute control signals
     double feedforward_term[2] = {K_ff * des_RPM[0], K_ff * des_RPM[1]};
@@ -486,7 +502,7 @@ static void rocketmixer(double timeSinceBoot_tS)
     ServoPWMCommand[1] = constrainf(ServoPWMCommand[1], minServoPWMCommand, maxServoPWMCommand);
 
     float minMotorCommand = 0;
-    float maxMotorCommand = 2047; //TODO increase again when it's safe
+    float maxMotorCommand = 1600; //TODO increase again when it's safe
     NewMotorCommand[0] = constrainf(NewMotorCommand[0], minMotorCommand, maxMotorCommand);
     NewMotorCommand[1] = constrainf(NewMotorCommand[1], minMotorCommand, maxMotorCommand);
 
@@ -497,7 +513,7 @@ static void rocketmixer(double timeSinceBoot_tS)
         integral_term[0] = 0.0;
         integral_term[1] = 0.0;
     }
-    debug[2] = integral_term[0];
+    // debug[2] = integral_term[0];
 
 
 
