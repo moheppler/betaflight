@@ -1,0 +1,87 @@
+defaults nosave
+
+
+# version
+# Betaflight / STM32H743 (SH74) 4.6.0 Feb 28 2025 / 16:40:21 (norevision) MSP API: 1.47
+# config rev: 05342a8
+
+# start the command batch
+batch start
+
+# reset configuration to default settings
+defaults nosave
+
+board_name FCHAT
+manufacturer_id CUST
+mcu_id 003f00273233510831323535
+signature 
+
+# feature
+feature -RX_SERIAL
+feature GPS
+feature OSD
+
+# serial
+serial 3 2 115200 57600 0 115200
+
+# mixer
+mixer AIRPLANE
+
+# aux
+aux 0 0 0 1300 1700 0 0
+
+# master
+set acc_calibration = 61,9,-1,1
+set rc_smoothing = OFF
+set align_board_pitch = -90
+set align_board_yaw = 180
+set serial_update_rate_hz = 2000
+set small_angle = 180
+set pid_process_denom = 4
+set gyro_1_sensor_align = DEFAULT
+set gyro_1_align_pitch = 1800
+set gyro_1_align_yaw = 1800
+set i2c1_clockspeed_khz = 400
+
+profile 0
+
+# profile 0
+set p_pitch = 49
+set i_pitch = 88
+set d_pitch = 5
+set f_pitch = 121
+set p_roll = 47
+set i_roll = 84
+set d_roll = 4
+set f_roll = 116
+set p_yaw = 47
+set i_yaw = 84
+set f_yaw = 116
+set d_max_roll = 5
+set d_max_pitch = 6
+set simplified_master_multiplier = 75
+set simplified_d_gain = 20
+set simplified_pi_gain = 140
+set simplified_feedforward_gain = 130
+
+profile 1
+
+profile 2
+
+profile 3
+
+# restore original profile selection
+profile 0
+
+rateprofile 0
+
+rateprofile 1
+
+rateprofile 2
+
+rateprofile 3
+
+# restore original rateprofile selection
+rateprofile 0
+
+# save configuration
