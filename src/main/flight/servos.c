@@ -493,7 +493,7 @@ static void rocketmixer(double timeSinceBoot_tS)
     motor[0] = NewMotorCommand[0];
     motor[1] = NewMotorCommand[1];
 
-
+    UNUSED(timeSinceBoot_tS);
     // NOTE not needed anymore since RC arming logic
     // TODO need this so the ESC starts with a zero command can maybe fix this later
     // double motorTimer_tS = 0;
