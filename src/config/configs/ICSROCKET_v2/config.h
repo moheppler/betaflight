@@ -136,22 +136,24 @@
 
 // TIMERS
 #define TIMER_PIN_MAPPING \
-    TIMER_PIN_MAP( 0, PA3 , 2,  3) \
-    TIMER_PIN_MAP( 1, PA2 , 2,  2) \
-    TIMER_PIN_MAP( 2, PA1 , 2,  1) \
+    TIMER_PIN_MAP( 0, PA3 , 2,  0) \
+    TIMER_PIN_MAP( 1, PA2 , 2,  0) \
+    TIMER_PIN_MAP( 2, PA1 , 2,  0) \
     TIMER_PIN_MAP( 3, PA0 , 2,  0) \
-    TIMER_PIN_MAP( 4, PB0 , 2,  10) \
-    TIMER_PIN_MAP( 5, PB1 , 2,  11) \
-    TIMER_PIN_MAP( 6, PD12 , 1, 4) \
-    TIMER_PIN_MAP( 7, PD13 , 1, 5) \
-    TIMER_PIN_MAP( 8, PE9 , 1,  9) \
-    TIMER_PIN_MAP( 9, PE11 , 1,  7) \
-    TIMER_PIN_MAP( 10, PE13 , 1, -1) \
-    TIMER_PIN_MAP( 11, PE14 , 1, -1) \
-    TIMER_PIN_MAP( 11, PC6 , 1, 8)
+    TIMER_PIN_MAP( 4, PB0 , 2,  0) \
+    TIMER_PIN_MAP( 5, PB1 , 2,  0) \
+    TIMER_PIN_MAP( 6, PD12 , 1, 0) \
+    TIMER_PIN_MAP( 7, PD13 , 1, 0) \
+    TIMER_PIN_MAP( 8, PE9 , 1,  0) \
+    TIMER_PIN_MAP( 9, PE11 , 1,  0) \
+    TIMER_PIN_MAP( 10, PE13 , 1, 0) \
+    TIMER_PIN_MAP( 11, PE14 , 1, 0) \
+    TIMER_PIN_MAP( 11, PC6 , 1, 0)
 
+// ADC3 is needed for the VBAT to update live
+#define ADC1_DMA_OPT        8 // DMA2 Stream 0
+#define ADC3_DMA_OPT        9 // DMA2 Stream 1
 
-#define ADC1_DMA_OPT        12 // DMA2 Stream 4
 #define SPI1_RX_DMA_OPT    13 // DMA2 Stream 5
 #define SPI1_TX_DMA_OPT    14 // DMA2 Stream 6
 #define SPI4_RX_DMA_OPT    15 // DMA2 Stream 7
@@ -162,6 +164,8 @@
 // #define TIMUP4_DMA_OPT      0
 // #define TIMUP5_DMA_OPT      0
 
+// // Pin mapped in PCB, not necessarily needed. Just put this here for ref.
+// #define USB_DETECT_PIN      PA9
 
 #define PINIO1_BOX 40   // BOX: BOXUSER1 MODE:USER1 
 #define PINIO2_BOX 41   // BOX: BOXUSER2 MODE:USER2
@@ -174,3 +178,5 @@
 #define DEFAULT_DSHOT_TELEMETRY         DSHOT_TELEMETRY_ON
 #define USE_DSHOT
 #define DEFAULT_VOLTAGE_METER_SOURCE    VOLTAGE_METER_ADC
+#define GPS_UART SERIAL_PORT_USART3
+#define SYSTEM_HSE_MHZ 8
